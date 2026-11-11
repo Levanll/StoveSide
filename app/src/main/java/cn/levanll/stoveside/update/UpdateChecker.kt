@@ -75,5 +75,20 @@ object UpdateChecker {
         )
     }
 
-    fun hasUpdate(remote: Release): Boolean = remote.versionCode > BuildConfig.VERSION_CODE
+    /**
+     * 比较版本：优先用 tag 里的语义版本（v1.0.1 → 1.0.1），
+     * 因为 GitHub tag 只保证 versionName，versionCode 不在 tag 里。
+     */
+    fun hasUpdate(remote: Release): Boolean = compareVersions(remote.versionName, BuildConfig.VERSION_NAME) > 0
+
+    fun compareVersions(a: String, b: String): Int {
+        val pa = a.trim().removePrefix("v").split('.', '-')
+        val pb = b.trim().removePrefix("v").split('.', '-')
+        for (i in 0 until maxOf(pa.size, pb.size)) {
+            val x = pa.getOrNull(i)?.toIntOrNull() ?: 0
+            val y = pb.getOrNull(i)?.toIntOrNull() ?: 0
+            if (x != y) return if (x > y) 1 else -1
+        }
+        return 0
+    }
 }

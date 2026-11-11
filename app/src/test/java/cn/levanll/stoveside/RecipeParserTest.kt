@@ -45,4 +45,11 @@ class RecipeParserTest {
     fun `absurd duration dropped`() {
         assertEquals(0, RecipeParser.toSeconds("99", "小时"))
     }
+    @Test
+    fun `version comparison`() {
+        assertEquals(1, cn.levanll.stoveside.update.UpdateChecker.compareVersions("1.0.1", "1.0.0"))
+        assertEquals(-1, cn.levanll.stoveside.update.UpdateChecker.compareVersions("1.0.0", "1.1.0"))
+        assertEquals(0, cn.levanll.stoveside.update.UpdateChecker.compareVersions("v1.0.0", "1.0.0"))
+        assertEquals(1, cn.levanll.stoveside.update.UpdateChecker.compareVersions("1.2", "1.1.9"))
+    }
 }
