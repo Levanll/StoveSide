@@ -218,6 +218,9 @@ def collect_assets(apk: Path, workdir: Path) -> list:
             + str(apk)
             + "\n请先运行 scripts/build.ps1（或让 CI 产出），再执行发布。"
         )
+    staged = workdir / apk.name
+    if staged.resolve() != apk.resolve():
+        shutil.copy2(apk, staged)
     sums = workdir / "SHA256SUMS"
     sums.write_text(sha256_of(apk) + "  " + apk.name + "\n", encoding="utf-8")
     return [apk.name, "SHA256SUMS"]
