@@ -1,0 +1,212 @@
+name: Build & Release
+
+# 手动触发的构建发布流水线：构建 StoveSide release APK，并把产物附加到指定 tag 的 Release。
+# 签名材料全部来自仓库 secrets；缺失时降级为未配置正式密钥的构建，产物移除签名后在日志中告警。
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '发布 tag（例如 v1.0.0），Release 将创建或更新到该 tag'
+        required: true
+        type: string
+      draft:
+        description: '以草稿形式创建 Release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-release-${ inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  GRADLE_VERSION: '8.9'
+  JAVA_VERSION: '17'
+
+jobs:
+  build:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    outputs:
+      signed: ${ steps.signing.outputs.signed }}
+      apk_name: ${ steps.package.outputs.apk_name }}
+      version_name: ${ steps.version.outputs.version_name }}
+      version_code: ${ steps.version.outputs.version_code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${ env.GRADLE_VERSION }}
+
+      - name: Read version from app/build.gradle.kts
+        id: version
+        run: |
+          set -euo pipefail
+          gradle_file=app/build.gradle.kts
+          version_name=$(sed -n 's/.*versionName *= *"\([^"]*\)".*/\1/p' "$gradle_file" | head -n1)
+          version_code=$(sed -n 's/.*versionCode *= *\([0-9][0-9]*\).*/\1/p' "$gradle_file" | head -n1)
+          if [ -z "$version_name" ] || [ -z "$version_code" ]; then
+            echo "::error::无法从 $gradle_file 解析 versionCode / versionName"
+            exit 1
+          fi
+          echo "version_name=$version_name" >> "$GITHUB_OUTPUT"
+          echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
+          echo "版本：$version_name (versionCode $version_code)"
+
+      - name: Prepare signing material
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p keystore
+          if [ -n "${KEYSTORE_BASE64}" ] && [ -n "${KEYSTORE_PASSWORD}" ] && [ -n "${KEY_ALIAS}" ] && [ -n "${KEY_PASSWORD}" ]; then
+            printf '%s' "${KEYSTORE_BASE64}" | base64 --decode > keystore/release.jks
+            printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "${KEYSTORE_PASSWORD}" "${KEY_ALIAS}" "${KEY_PASSWORD}" > keystore/keystore.properties
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "签名：使用仓库 secrets 中的正式 release 密钥"
+          else
+            echo "::warning title=未配置签名 secrets::缺少 KEYSTORE_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD，本次只产出未签名 APK，不能用于正式发布安装。"
+            ephemeral_pass=$(openssl rand -hex 16)
+            keytool -genkeypair -noprompt \
+              -keystore keystore/release.jks -storetype PKCS12 \
+              -alias ci-ephemeral -keyalg RSA -keysize 2048 -validity 1 \
+              -dname "CN=StoveSide CI Ephemeral" \
+              -storepass "$ephemeral_pass" -keypass "$ephemeral_pass" >/dev/null 2>&1
+            printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=ci-ephemeral\nkeyPassword=%s\n' \
+              "$ephemeral_pass" "$ephemeral_pass" > keystore/keystore.properties
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "签名：使用一次性 CI 密钥仅用于跑通 Gradle 签名配置，产物随后移除签名"
+          fi
+
+      - name: Assemble release APK
+        run: |
+          set -euo pipefail
+          if [ -x ./gradlew ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace
+          else
+            gradle assembleRelease --no-daemon --stacktrace
+          fi
+
+      - name: Package artifact
+        id: package
+        env:
+          VERSION_NAME: ${ steps.version.outputs.version_name }}
+          SIGNED: ${ steps.signing.outputs.signed }}
+        run: |
+          set -euo pipefail
+          apk=app/build/outputs/apk/release/app-release.apk
+          if [ ! -f "$apk" ]; then
+            echo "::error::未找到 release APK：$apk"
+            exit 1
+          fi
+          mkdir -p dist
+          if [ "$SIGNED" = "true" ]; then
+            name="StoveSide-${VERSION_NAME}-release.apk"
+          else
+            name="StoveSide-${VERSION_NAME}-release-unsigned.apk"
+            zip -q -d "$apk" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/*.EC' || true
+            echo "::warning title=未签名包::仓库缺少签名 secrets，产物为未签名 APK（已移除 META-INF 内签名文件），仅供构建验证，不能直接安装发布。"
+          fi
+          cp "$apk" "dist/$name"
+          echo "apk_name=$name" >> "$GITHUB_OUTPUT"
+          ls -l dist
+
+      - name: Verify signature
+        if: steps.signing.outputs.signed == 'true'
+        run: |
+          set -euo pipefail
+          apksigner=$(find "${ANDROID_HOME}/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -n1)
+          "${apksigner}" verify --verbose --print-certs "dist/${{ steps.package.outputs.apk_name }}"
+
+      - name: Write SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum ./*.apk > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stoveside-release
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Attach to Release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: stoveside-release
+          path: dist
+
+      - name: Show build summary
+        run: |
+          set -euo pipefail
+          echo "tag: ${{ inputs.tag }}"
+          echo "version: ${{ needs.build.outputs.version_name }} (versionCode ${{ needs.build.outputs.version_code }})"
+          echo "signed: ${{ needs.build.outputs.signed }}"
+          ls -l dist
+
+      - name: Compose release notes
+        id: notes
+        env:
+          VERSION_NAME: ${{ needs.build.outputs.version_name }}
+          VERSION_CODE: ${{ needs.build.outputs.version_code }}
+          SIGNED: ${{ needs.build.outputs.signed }}
+        run: |
+          set -euo pipefail
+          file="$RUNNER_TEMP/release-notes.md"
+          {
+            echo "StoveSide ${VERSION_NAME} (versionCode ${VERSION_CODE})"
+            echo
+            echo "本 Release 由 GitHub Actions 构建：.github/workflows/build-release.yml"
+            echo
+            if [ "$SIGNED" = "true" ]; then
+              echo "- 签名：官方 release keystore（来自仓库 secrets）"
+            else
+              echo "- **未签名构建**：仓库未配置签名 secrets，APK 不含签名，仅供构建验证，无法直接安装。"
+            fi
+            echo
+            echo "安装与校验：下载 APK 后执行 sha256sum -c SHA256SUMS"
+          } > "$file"
+          echo "path=$file" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.tag }}
+          target_commitish: ${{ github.sha }}
+          draft: ${{ inputs.draft }}
+          prerelease: false
+          body_path: ${{ steps.notes.outputs.path }}
+          fail_on_unmatched_files: true
+          files: |
+            dist/${{ needs.build.outputs.apk_name }}
+            dist/SHA256SUMS

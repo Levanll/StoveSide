@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 应用内更新下载与备份文件所在目录 -->
+    <external-files-path name="updates" path="updates/" />
+    <files-path name="backups" path="backups/" />
+    <cache-path name="cache" path="." />
+</paths>

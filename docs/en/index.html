@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StoveSide · 灶暖 — Parallel cooking timers for Android</title>
+  <meta name="description" content="StoveSide is an Android timer built for cooking: parallel step timers, per-step notes, multiple cook instances of one recipe, paste-to-steps parsing, Chinese and English UI, export and import, and in-app updates.">
+  <meta name="theme-color" content="#FDF8F3">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <svg width="30" height="30" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M9 26h30a15 15 0 0 1-15 15A15 15 0 0 1 9 26Z" fill="#C96F4A"/>
+          <path d="M6 26h36" stroke="#9C4F2F" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M17 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M28 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        StoveSide
+      </a>
+      <nav class="nav">
+        <a href="#features">Features</a>
+        <a href="#model">Data model</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#download">Download</a>
+      </nav>
+      <a class="lang" href="../index.html">简体中文</a>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-copy">
+          <span class="eyebrow">Android · Cooking timers</span>
+          <h1>Several burners on,<br>still <em>under control</em>.</h1>
+          <p class="lede">StoveSide is built for the twenty frantic minutes of actual cooking: soup simmering, fish steaming, stir-fry on high heat and rice coming up — each step with its own timer, and whatever you jot down stays out of your recipes.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/Levanll/StoveSide/releases/latest">Download latest</a>
+            <a class="btn btn-ghost" href="https://github.com/Levanll/StoveSide">View source</a>
+          </div>
+          <p class="hero-meta">Version 1.0.0 · Android 7.0 and newer · Chinese and English · Data stays on device</p>
+        </div>
+        <div class="hero-mark">
+          <div class="plate">
+            <svg width="140" height="140" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M9 26h30a15 15 0 0 1-15 15A15 15 0 0 1 9 26Z" fill="#C96F4A"/>
+          <path d="M6 26h36" stroke="#9C4F2F" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M17 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M28 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Built around how cooking actually goes</h2>
+          <p>Not another recipe collection — it answers the question that matters mid-cook: how many minutes does this step still need?</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2h6"/></svg></div>
+            <h3>Parallel multi-flow timers</h3>
+            <p>Run several cooking flows at once, each step with an independent countdown that never blocks the others. Remaining time is shown together, and alerts fire when a step is due.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M14 4v5h5"/><path d="M8 14h7"/><path d="M8 17h4"/></svg></div>
+            <h3>Per-step notes</h3>
+            <p>Heat level, a last-minute substitution, what to change next time — recorded on the step it belongs to, instead of held in your head.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg></div>
+            <h3>Many instances, one recipe</h3>
+            <p>A single recipe can open several cook instances at once, each tracking its own progress and notes — handy for two pots or for repeated test runs.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 10h6"/><path d="M9 14h6"/><path d="M9 18h3"/></svg></div>
+            <h3>Paste text, get steps</h3>
+            <p>Paste a block of recipe text and it splits into steps by line breaks and numbering, so you never retype a recipe line by line.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18Z"/></svg></div>
+            <h3>Chinese and English</h3>
+            <p>The interface follows the system language and switches between Chinese and English — no need to change apps when you change languages.</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 16"/><path d="M4 20v-4h4"/></svg></div>
+            <h3>Export, import, update</h3>
+            <p>The whole data set can be exported as a backup and restored after a reinstall, and new builds can be checked and installed from inside the app.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="model">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Templates and instances, kept apart</h2>
+          <p>This is the core design of the app: a recipe template only answers "how is this dish made", every real cooking session opens a separate instance, and nothing changed in an instance ever writes back to the template.</p>
+        </div>
+        <div class="model">
+          <div class="model-item">
+            <code>Recipe → Step</code>
+            <p>The recipe template and its steps, reusable indefinitely and always left clean.</p>
+          </div>
+          <div class="model-item">
+            <code>Recipe → Cook → CookStep</code>
+            <p>Each cooking session creates a Cook instance; step state and notes live on its CookSteps.</p>
+          </div>
+          <div class="model-item">
+            <code>Notes stay in the instance</code>
+            <p>Instance notes never write back, so templates and instances evolve independently.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Screens</h2>
+          <p>Cream base, clay orange and sage green, with quietly rounded cards.</p>
+        </div>
+        <div class="shots">
+          <figure class="shot">
+            <div class="frame">
+              <img src="../images/screenshot-cooks.png" alt="Cooks in progress with parallel timers" loading="lazy">
+            </div>
+            <figcaption>Parallel timers</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame">
+              <img src="../images/screenshot-recipes.png" alt="Recipes and their steps" loading="lazy">
+            </div>
+            <figcaption>Recipes and steps</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame">
+              <img src="../images/screenshot-settings.png" alt="Settings: language, export and import, in-app updates" loading="lazy">
+            </div>
+            <figcaption>Settings, backup and updates</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="palette">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Palette</h2>
+          <p>Warm cream with clay orange as the primary; dark mode settles into deep clay black.</p>
+        </div>
+        <div class="palette">
+          <div class="swatch">
+            <div class="chip" style="background:#FDF8F3;"></div>
+            <div class="label">Cream · #FDF8F3</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#FFFDFA;border-bottom:1px solid #EADFD4;"></div>
+            <div class="label">Card · #FFFDFA</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#C96F4A;"></div>
+            <div class="label">Clay · #C96F4A</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#9C4F2F;"></div>
+            <div class="label">Deep clay · #9C4F2F</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#7E9B80;"></div>
+            <div class="label">Sage · #7E9B80</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#3D3229;"></div>
+            <div class="label">Ink · #3D3229</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#7A6A5D;"></div>
+            <div class="label">Muted · #7A6A5D</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#211A16;"></div>
+            <div class="label">Dark base · #211A16</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="download">
+      <div class="wrap">
+        <div class="download">
+          <h2>Get the stove under control</h2>
+          <p>Download the latest APK from GitHub Releases and install it directly. Installing over an existing version keeps your data.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/Levanll/StoveSide/releases/latest">Download latest</a>
+            <a class="btn btn-ghost" href="https://github.com/Levanll/StoveSide#readme">Read the docs</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p style="margin:0">© 2026 StoveSide — built with Kotlin and Jetpack Compose.</p>
+      <nav>
+        <a href="https://github.com/Levanll/StoveSide">GitHub</a>
+        <a href="https://github.com/Levanll/StoveSide/releases/latest">Releases</a>
+        <a href="https://github.com/Levanll/StoveSide/issues">Issues</a>
+        <a href="../index.html">简体中文</a>
+      </nav>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+# 构建产物
+build/
+.gradle/
+local.properties
+
+# 签名文件绝不入库
+keystore/
+*.jks
+*.keystore
+*.properties.bak
+
+# IDE
+.idea/
+*.iml
+
+# 截图原始产物
+shots/
+
+# 快照与临时产物
+_archive-*/
+*.apk
+*.aab
+*.hprof
