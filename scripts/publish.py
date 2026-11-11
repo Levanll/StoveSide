@@ -156,6 +156,10 @@ def _git_env() -> dict:
         env["GIT_CONFIG_KEY_0"] = "credential.helper"
         env["GIT_CONFIG_VALUE_0"] = "!f() { echo username=x-access-token; echo password=$GH_PASS; }; f"
     env["GIT_TERMINAL_PROMPT"] = "0"
+    env.setdefault("GIT_AUTHOR_NAME", "Levanll")
+    env.setdefault("GIT_AUTHOR_EMAIL", "levanll@users.noreply.github.com")
+    env.setdefault("GIT_COMMITTER_NAME", "Levanll")
+    env.setdefault("GIT_COMMITTER_EMAIL", "levanll@users.noreply.github.com")
     return env
 
 
