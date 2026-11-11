@@ -122,7 +122,7 @@ def describe_token(token: str) -> str:
 # --------------------------------------------------------------------------
 # 本地命令
 # --------------------------------------------------------------------------
-def git(*args: str, capture: bool = True) -> str:
+def git(*args: str, capture: bool = True, env: dict | None = None) -> str:
     shown = "git " + " ".join(args)
     if not capture:
         print("    $ " + shown)
@@ -133,11 +133,47 @@ def git(*args: str, capture: bool = True) -> str:
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=env if env is not None else _git_env(),
     )
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "").strip()
-        raise PublishError("命令失败（exit " + str(proc.returncode) + "）: " + shown + "\n" + detail)
+        raise PublishError("命令失败（exit " + str(proc.returncode) + "）: " + shown + "\n" + _scrub(detail))
     return (proc.stdout or "").strip()
+
+
+
+def _git_env() -> dict:
+    """构造 git 环境：用 GIT_CONFIG 注入凭据 helper，token 不落盘、不进 URL、不进进程参数。
+
+    只在内存环境变量里传递密码，git 子进程退出即消失；
+    比把 token 拼进 remote URL（会写进 .git/config）安全得多。
+    """
+    env = dict(os.environ)
+    token = _read_token_silent()
+    if token:
+        env["GH_PASS"] = token
+        env["GIT_CONFIG_COUNT"] = "1"
+        env["GIT_CONFIG_KEY_0"] = "credential.helper"
+        env["GIT_CONFIG_VALUE_0"] = "!f() { echo username=x-access-token; echo password=$GH_PASS; }; f"
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
+def _read_token_silent() -> str:
+    tok = os.environ.get("GITHUB_TOKEN", "").strip()
+    if tok:
+        return tok
+    if TOKEN_FILE.exists():
+        try:
+            return TOKEN_FILE.read_text(encoding="utf-8").strip()
+        except OSError:
+            return ""
+    return ""
+
+
+def _scrub(text: str) -> str:
+    tok = _read_token_silent()
+    return text.replace(tok, "<redacted>") if tok and tok in text else text
 
 
 def git_ok(*args: str) -> bool:
@@ -394,7 +430,7 @@ def step_pages(reporter: Reporter, repo: str, message: str) -> None:
         ("commit", "-q", "-m", message),
     ):
         print("    $ git " + " ".join(args))
-        proc = subprocess.run(["git", *args], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace")
+        proc = subprocess.run(["git", *args], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace", env=_git_env())
         if proc.returncode != 0:
             raise PublishError("gh-pages 准备失败: git " + " ".join(args) + "\n" + (proc.stderr or "").strip())
     print("    $ git push --force origin HEAD:" + PAGES_BRANCH)
@@ -405,6 +441,7 @@ def step_pages(reporter: Reporter, repo: str, message: str) -> None:
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=_git_env(),
     )
     if proc.returncode != 0:
         raise PublishError("gh-pages 推送失败:\n" + (proc.stderr or "").strip())

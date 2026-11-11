@@ -21,3 +21,8 @@ _archive-*/
 *.apk
 *.aab
 *.hprof
+# 构建日志
+*.log
+
+# Windows 保留名误写文件（git 无法 stat）
+CON
