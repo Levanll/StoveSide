@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -229,6 +230,11 @@ private fun StepRow(vm: StoveViewModel, cook: CookView, sv: StepView) {
             )
         }
         if (!done) {
+            if (running) {
+                TextButton(onClick = { vm.addOneMinute(step) }, contentPadding = PaddingValues(horizontal = 6.dp)) {
+                    Text("+1'", style = MaterialTheme.typography.labelMedium)
+                }
+            }
             IconButton(onClick = { if (running) vm.pauseStep(step) else vm.startStep(step) }) {
                 Icon(
                     if (running) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,

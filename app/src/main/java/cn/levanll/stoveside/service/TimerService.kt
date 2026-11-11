@@ -28,7 +28,7 @@ class TimerService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
-    private val notified = mutableSetOf<Long>()
+    private val notified = mutableSetOf<Pair<Long, Long?>>()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -47,20 +47,18 @@ class TimerService : Service() {
         while (true) {
             val now = System.currentTimeMillis()
             val running = runCatching { repo.runningSteps() }.getOrDefault(emptyList())
-            val due = running.filter { it.dueAt != null && it.dueAt <= now && it.id !in notified }
+            // 到点只提醒，不改状态：改回 pending 会让用户丢掉"这锅还在跑"的事实，
+            // 也让「+1 分钟」无处可点。去重键用 stepId+dueAt，同一轮到期只响一次。
+            val due = running.filter { it.dueAt != null && it.dueAt <= now }
+                .filter { (it.id to it.dueAt) !in notified }
             for (step in due) {
-                notified += step.id
+                notified += step.id to step.dueAt
                 Notifier.due(
                     this,
                     (Notifier.ID_DUE_BASE + step.id).toInt(),
                     I18n.t("到点了", "Timer done"),
                     step.title,
                 )
-                runCatching {
-                    repo.updateCookStep(
-                        step.copy(status = "pending")
-                    )
-                }
             }
             val next = running.filter { it.dueAt != null }
                 .minByOrNull { it.dueAt!! }

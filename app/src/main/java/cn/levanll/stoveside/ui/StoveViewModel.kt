@@ -11,6 +11,7 @@ import cn.levanll.stoveside.data.entity.Recipe
 import cn.levanll.stoveside.data.entity.Step
 import cn.levanll.stoveside.domain.RecipeParser
 import cn.levanll.stoveside.i18n.I18n
+import cn.levanll.stoveside.service.TimerService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -159,6 +160,7 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
         list.getOrNull(idx + 1)?.let { next ->
             if (next.status == "pending") list[idx + 1] = activate(next, now)
         }
+        TimerService.start(getApplication())
         repo.updateCookSteps(list)
         val allDone = list.all { it.status == "done" || it.status == "skipped" }
         if (allDone) {
@@ -168,6 +170,7 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startStep(step: CookStep) = launchAction {
         repo.updateCookStep(activate(step, System.currentTimeMillis()))
+        TimerService.start(getApplication())
     }
 
     fun pauseStep(step: CookStep) = launchAction {
