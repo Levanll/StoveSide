@@ -48,10 +48,11 @@
 - **CI workflow 从未在 GitHub 上真实跑过**。表达式语法与 bash 已静态校验，但没触发过 `workflow_dispatch`。
 - **导入语言恢复** 没有单测覆盖（需要 Android Context），只做了代码路径接入。
 - 未在真机（非模拟器）上跑过，只在 x86_64 API 34 模拟器验证。
-- **CHANGELOG 当前是残缺的（待修）**：`9c69615` 合并重复的 1.0.2 标题时把文件从 56 行砍到 28 行，
-  丢掉了 `## [Unreleased]`、`## [1.0.0]` 整节（8 条双语 Added + Known limitations）、文件头说明段与底部 compare/tag 链接；
-  且 H1 `# 更新日志 · Changelog` 排在正文末尾，顺序颠倒。完整内容可从 `git show 8458ef0:CHANGELOG.md` 取回。
-- **`scripts/__pycache__/` 未被 `.gitignore` 覆盖**：跑过 `py_compile` 后 `git add -A` 会把它带进公开仓库。
+- **CHANGELOG 已修复（未提交）**：`9c69615` 曾把文件从 56 行砍到 28 行，现已从 `8458ef0` 取回 `## [Unreleased]`、
+  `## [1.0.0]` 整节（8 条双语 Added + Known limitations）、文件头说明段与底部 compare/tag 链接，
+  H1 已提到文件最前，版本按倒序排列（Unreleased → 1.0.2 → 1.0.0），共 64 行。
+- ~~`scripts/__pycache__/` 未被 `.gitignore` 覆盖~~ **已解决**：`.gitignore` 现有 `__pycache__/` 与 `*.pyc`，
+  跑过 `py_compile` 也不会再被 `git add -A` 带进公开仓库。
 
 ---
 
@@ -79,9 +80,20 @@ F:/android-dev/gradle-dist/gradle-8.9/bin/gradle --offline \
   -Pkotlin.compiler.execution.strategy=in-process assembleRelease
 ```
 
-> **必须加 `-Pkotlin.compiler.execution.strategy=in-process`**。
-> 本机 Kotlin 编译 worker 的 JVM agent 初始化会失败（`agent library failed to init: instrument`），
-> 这是环境问题不是项目问题。不加这个参数只会得到一句毫无信息量的 "A failure occurred while executing GradleCompilerRunner"。
+> 这条命令历史上被记为「**必须加 `-Pkotlin.compiler.execution.strategy=in-process`**，不加必挂」。
+> 2026-11-12 重新实测后，这个归因不准确：真正的分水岭是**用哪个入口调 Gradle**，不是这个参数。
+> 下面第一条补充给出实测证据与可复现的做法。保险起见保留 `in-process` 无害，但不要再把它当成必挂的解药。
+
+> **2026-11-12 补充实测（命令行入口差异，务必区分）**：
+> - 从 **cmd / gradle.bat** 入口跑：不加 `in-process` 也能 `BUILD SUCCESSFUL`（冷启动实测 31s 通过）。
+> - 从 **bash / 上面的 `bin/gradle`（sh 脚本）** 入口跑：脚本第 89 行会 `cd -P` 再 `APP_HOME=$(cygpath --path --mixed …)`，
+>   本机 niubash/winuxcmd 带的 `cygpath.exe` 把 `F:/android-dev/…` 转成 `F;C:/Users/…/winuxcmd/android-dev/…`（冒号变分号），
+>   `-javaagent` 与 `-classpath` 全被写坏，于是无论加不加 `in-process` 都报 `agent library failed to init: instrument`。
+> - 实测结论：**`in-process` 不是必需项，入口才是。** 从 cmd 入口冷启动、完全不传 `in-process` 重编 Kotlin：`BUILD SUCCESSFUL in 31s`（连测两次均过）；
+>   从 sh 入口冷启动、带着 `in-process`：仍然 `agent library failed to init: instrument`。两边报错字符串相同，根因不同——
+>   后者是被 `cygpath` 写坏的 Gradle 客户端 `-javaagent` 路径，不是 Kotlin worker。
+> - 稳妥做法（两种都可以）：① 一律用 `cmd.exe /c gradle.bat ...` 调起；② 或先用 `cmd` 跑一次让 daemon 起来（sh 客户端连上已有 daemon 就不再走自己的 javaagent）。
+> - 判断方法：报错里出现 `F;/android-dev/...` 就是 cygpath 写坏了路径，与 `in-process` 无关。
 
 跑单测需要联网拉 junit（首次），之后可 `--offline`：
 
@@ -351,7 +363,7 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 
 按优先级：
 
-1. **修复 CHANGELOG（先做这个）** — 从 `git show 8458ef0:CHANGELOG.md` 取回 `[Unreleased]` 与 `[1.0.0]` 两节，把 H1 提到文件最前，版本按倒序排（Unreleased → 1.0.2 → 1.0.0），底部补回 compare / tag 链接。顺带在 `.gitignore` 补 `__pycache__/` 与 `*.pyc`。这是已确认的实质回退，不是可选项
+1. ~~**修复 CHANGELOG（先做这个）**~~ **已完成（工作区已修，未提交）** — `[Unreleased]` 与 `[1.0.0]` 两节已从 `8458ef0` 取回，H1 提到文件最前，版本倒序，底部 compare / tag 链接已补；`.gitignore` 的 `__pycache__/` 与 `*.pyc` 此前已补齐。剩一步：等主人批准后提交推送
 2. **让 CI 真实跑一次** — 在 GitHub 上手动触发 `workflow_dispatch`，输入 tag，确认 `${{ }}` 修正确实生效。这是唯一还没被验证的环节
 3. **真机验证** — 目前只在模拟器上跑过
 4. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
