@@ -215,7 +215,16 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
-def collect_assets(apk: Path, workdir: Path) -> list:
+def asset_name(version_name: str) -> str:
+    """Release 附件的正式名称：StoveSide <版本号>.apk。
+
+    用 gradle 产出的 app-release.apk 原名会让人看不出下的是哪个版本，
+    所以统一改名成带版本号的形式；SHA256SUMS 里记录的也是这个名字。
+    """
+    return "StoveSide-" + version_name + ".apk"
+
+
+def collect_assets(apk: Path, workdir: Path, name: str) -> list:
     """写出 SHA256SUMS 并返回要上传的资产文件名列表。"""
     if not apk.is_file():
         raise PublishError(
@@ -223,12 +232,12 @@ def collect_assets(apk: Path, workdir: Path) -> list:
             + str(apk)
             + "\n请先运行 scripts/build.ps1（或让 CI 产出），再执行发布。"
         )
-    staged = workdir / apk.name
+    staged = workdir / name
     if staged.resolve() != apk.resolve():
         shutil.copy2(apk, staged)
     sums = workdir / "SHA256SUMS"
-    sums.write_text(sha256_of(apk) + "  " + apk.name + "\n", encoding="utf-8")
-    return [apk.name, "SHA256SUMS"]
+    sums.write_text(sha256_of(apk) + "  " + name + "\n", encoding="utf-8")
+    return [name, "SHA256SUMS"]
 
 
 # --------------------------------------------------------------------------
@@ -562,7 +571,7 @@ def main(argv=None) -> int:
             else Path(tempfile.mkdtemp(prefix="stoveside-dist-"))
         )
         sha256 = sha256_of(apk) if apk.is_file() else "(APK 尚未构建)"
-        assets = [apk.name, "SHA256SUMS"]
+        assets = [asset_name(version_name), "SHA256SUMS"]
 
         reporter.title("StoveSide 发布" + ("（dry-run，不产生任何变更）" if args.dry_run else ""))
         reporter.info("仓库:   " + args.repo)
@@ -614,7 +623,7 @@ def main(argv=None) -> int:
         if args.dry_run:
             reporter.action("生成 SHA256SUMS（APK sha256 前缀 " + sha256[:12] + "）")
         else:
-            collect_assets(apk, workdir)
+            collect_assets(apk, workdir, asset_name(version_name))
         step_release(
             gh,
             args.repo,
