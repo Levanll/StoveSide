@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>灶暖 · StoveSide — 多流程并行烹饪计时</title>
+  <meta name="description" content="灶暖是一个专注做饭当下的 Android 计时器：多流程并行计时、步骤备注、同一食谱多实例追踪、粘贴文本自动拆分步骤，中英双语，支持导出导入与应用内更新。">
+  <meta name="theme-color" content="#FDF8F3">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <svg width="30" height="30" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M9 26h30a15 15 0 0 1-15 15A15 15 0 0 1 9 26Z" fill="#C96F4A"/>
+          <path d="M6 26h36" stroke="#9C4F2F" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M17 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M28 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        灶暖 StoveSide
+      </a>
+      <nav class="nav">
+        <a href="#features">功能</a>
+        <a href="#model">数据模型</a>
+        <a href="#screenshots">截图</a>
+        <a href="#download">下载</a>
+      </nav>
+      <a class="lang" href="en/index.html">English</a>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-copy">
+          <span class="eyebrow">Android · 烹饪计时</span>
+          <h1>几口锅同时开火，<br>也<em>不乱</em>。</h1>
+          <p class="lede">灶暖专注做饭当下那二十分钟：炖汤、蒸鱼、炒菜、焖饭同时在跑，每个步骤各有计时，随手写下的备注也不会弄脏你的食谱。</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/Levanll/StoveSide/releases/latest">下载最新版本</a>
+            <a class="btn btn-ghost" href="https://github.com/Levanll/StoveSide">查看源码</a>
+          </div>
+          <p class="hero-meta">版本 1.0.5 · 支持 Android 7.0 及以上 · 中英双语 · 数据本地存储</p>
+        </div>
+        <div class="hero-mark">
+          <div class="plate">
+            <svg width="140" height="140" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M9 26h30a15 15 0 0 1-15 15A15 15 0 0 1 9 26Z" fill="#C96F4A"/>
+          <path d="M6 26h36" stroke="#9C4F2F" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M17 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M28 17c0-3 3-3.6 3-6.6" stroke="#7E9B80" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>为真实的下厨节奏设计</h2>
+          <p>不是又一个菜谱收藏夹，而是把「现在这一步还要几分钟」回答清楚。</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2h6"/></svg></div>
+            <h3>多流程并行计时</h3>
+            <p>同时跑多个烹饪流程，每个步骤独立倒计时、互不阻塞，剩余时间统一呈现。到点后会持续响铃加震动，直到你点「知道了」——人不在灶台边也不会错过。</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M14 4v5h5"/><path d="M8 14h7"/><path d="M8 17h4"/></svg></div>
+            <h3>步骤备注</h3>
+            <p>火力大小、临时换的配料、下次要改的地方，都记在对应的步骤上，不再靠脑子记。</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg></div>
+            <h3>同食谱多实例</h3>
+            <p>同一份食谱可以同时开出多个烹饪实例，各自推进、各自记录，适合一次做两锅或反复试做。</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 10h6"/><path d="M9 14h6"/><path d="M9 18h3"/></svg></div>
+            <h3>粘贴文本自动拆分</h3>
+            <p>把一段菜谱文本粘进来，按行与序号自动切成步骤，省掉逐条手打的功夫。</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18Z"/></svg></div>
+            <h3>中英双语</h3>
+            <p>界面跟随系统语言在中文与英文之间切换，同一台手机换语言不必换应用。</p>
+          </article>
+          <article class="card">
+            <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 16"/><path d="M4 20v-4h4"/></svg></div>
+            <h3>导出导入与更新</h3>
+            <p>数据可整体导出备份，换机重装后一键导回；新版本可在应用内直接检查并安装。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="model">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>模板与实例，严格分开</h2>
+          <p>这是整个应用的核心设计：食谱模板只回答「这道菜怎么做」，每次真正下厨另开一个实例，实例里的任何改动都不会回写模板。</p>
+        </div>
+        <div class="model">
+          <div class="model-item">
+            <code>Recipe → Step</code>
+            <p>食谱模板与它的步骤，可被反复使用，始终保持干净。</p>
+          </div>
+          <div class="model-item">
+            <code>Recipe → Cook → CookStep</code>
+            <p>每次下厨开一个 Cook 实例，步骤状态与备注记录在 CookStep 上。</p>
+          </div>
+          <div class="model-item">
+            <code>Notes stay in the instance</code>
+            <p>实例备注不回写模板，模板与实例各自独立演进。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>界面一览</h2>
+          <p>奶油底、陶土橙与鼠尾草绿，圆角克制的卡片式布局。</p>
+        </div>
+        <div class="shots">
+          <figure class="shot">
+            <div class="frame">
+              <img src="images/zh/cooks.png" alt="进行中的烹饪界面：多个流程并行计时" loading="lazy">
+            </div>
+            <figcaption>多流程并行计时</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame">
+              <img src="images/zh/recipes.png" alt="食谱与步骤管理界面" loading="lazy">
+            </div>
+            <figcaption>食谱与步骤</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame">
+              <img src="images/zh/settings.png" alt="设置界面：语言、导出导入与应用内更新" loading="lazy">
+            </div>
+            <figcaption>设置、导出导入与更新</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="palette">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>配色</h2>
+          <p>暖调奶油底色配陶土橙主色，深色模式沉到深陶土黑。</p>
+        </div>
+        <div class="palette">
+          <div class="swatch">
+            <div class="chip" style="background:#FDF8F3;"></div>
+            <div class="label">奶油底 · #FDF8F3</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#FFFDFA;border-bottom:1px solid #EADFD4;"></div>
+            <div class="label">卡片底 · #FFFDFA</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#C96F4A;"></div>
+            <div class="label">陶土橙 · #C96F4A</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#9C4F2F;"></div>
+            <div class="label">深陶土 · #9C4F2F</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#7E9B80;"></div>
+            <div class="label">鼠尾草绿 · #7E9B80</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#3D3229;"></div>
+            <div class="label">墨色文字 · #3D3229</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#7A6A5D;"></div>
+            <div class="label">浅灰褐 · #7A6A5D</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#211A16;"></div>
+            <div class="label">深色底 · #211A16</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="download">
+      <div class="wrap">
+        <div class="download">
+          <h2>现在就把灶台理清楚</h2>
+          <p>从 GitHub Releases 下载最新 APK，直接安装；已装旧版可直接覆盖，数据保留。</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/Levanll/StoveSide/releases/latest">下载最新版本</a>
+            <a class="btn btn-ghost" href="https://github.com/Levanll/StoveSide#readme">阅读文档</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p style="margin:0">© 2026 灶暖 · StoveSide — 用 Kotlin 与 Jetpack Compose 构建。</p>
+      <nav>
+        <a href="https://github.com/Levanll/StoveSide">GitHub</a>
+        <a href="https://github.com/Levanll/StoveSide/releases/latest">Releases</a>
+        <a href="https://github.com/Levanll/StoveSide/issues">问题反馈</a>
+        <a href="en/index.html">English</a>
+      </nav>
+    </div>
+  </footer>
+
+</body>
+</html>
