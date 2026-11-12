@@ -73,13 +73,13 @@
 
 | 在煮 · 多流程并行 | 食谱 · 模板与实例 |
 |---|---|
-| ![在煮](docs/images/screenshot-cooks.png) | ![食谱](docs/images/screenshot-recipes.png) |
-| *红烧肉 #1 与银耳羹 #2 同时推进，各自剩余时间独立倒数* | *同一份食谱可反复开火，开出的实例互不干扰* |
+| ![在煮](docs/images/zh/cooks.png) | ![食谱](docs/images/zh/recipes.png) |
+| *番茄牛腩 #1 与红烧肉 #1 同时推进，各自剩余时间独立倒数* | *同一份食谱可反复开火，开出的实例互不干扰* |
 
-| 设置 · 语言 / 数据 / 更新 | 英文界面 |
+| 步骤备注 · 这次的做法 | 设置 · 语言 / 数据 / 更新 |
 |---|---|
-| ![设置](docs/images/screenshot-settings.png) | ![英文](docs/images/screenshot-cooks-en.png) |
-| *导出导入、检查更新都在这一页* | *切换到 English 后杀进程重启仍然保持* |
+| ![备注](docs/images/zh/note.png) | ![设置](docs/images/zh/settings.png) |
+| *点步骤下方即可写这次的做法，只留在本次实例* | *语言、导出导入、检查更新都在这一页* |
 
 ---
 

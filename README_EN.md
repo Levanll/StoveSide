@@ -73,13 +73,13 @@ Go to **Cooking** and tap a recipe pill at the top (or ▶ on a card). Every tap
 
 | Cooking · parallel timers | Recipes · template vs session |
 |---|---|
-| ![Cooking](docs/images/screenshot-cooks.png) | ![Recipes](docs/images/screenshot-recipes.png) |
-| *Braised pork #1 and Tremella soup #2 advance together, each counting down on its own* | *The same recipe can be started repeatedly; each session stays isolated* |
+| ![Cooking](docs/images/en/cooks.png) | ![Recipes](docs/images/en/recipes.png) |
+| *Tomato beef stew #1 and Braised pork belly #1 advance together, each counting down on its own* | *The same recipe can be started repeatedly; each session stays isolated* |
 
-| Settings · language / data / updates | English UI |
+| Step notes · how this run went | Settings · language / data / updates |
 |---|---|
-| ![Settings](docs/images/screenshot-settings.png) | ![English](docs/images/screenshot-cooks-en.png) |
-| *Export, import and update checks all live here* | *After switching to English, it survives a process kill and relaunch* |
+| ![Note](docs/images/en/note.png) | ![Settings](docs/images/en/settings.png) |
+| *Tap under any step to note this run; the note stays with this session only* | *Language, export/import and update checks all live here* |
 
 ---
 

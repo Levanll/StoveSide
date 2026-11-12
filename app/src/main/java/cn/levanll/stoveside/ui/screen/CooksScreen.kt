@@ -2,6 +2,8 @@ package cn.levanll.stoveside.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.levanll.stoveside.domain.TimeText
@@ -87,7 +90,11 @@ fun CooksScreen(vm: StoveViewModel, modifier: Modifier = Modifier) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 英文菜名普遍比中文长，一行放不下时要能横向滑动，而不是把胶囊挤成竖条
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
                     recipes.take(3).forEach { r ->
                         Card(
                             onClick = { vm.startCook(r) },
@@ -233,16 +240,22 @@ private fun StepRow(vm: StoveViewModel, cook: CookView, sv: StepView) {
                 step.title,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 step.note.ifBlank { I18n.t("点这里写这次的做法", "Tap to note this run") },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (step.durationSec > 0) {
             Text(
                 if (running) TimeText.clock(sv.remainingMs) else TimeText.duration(step.durationSec),
+                // 英文标题更长，时间需要留出独立的间距，否则会贴上去像被吃掉
+                modifier = Modifier.padding(start = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = if (running) FontWeight.Bold else FontWeight.Normal,
                 color = if (running && sv.remainingMs < 60_000) MaterialTheme.colorScheme.error
