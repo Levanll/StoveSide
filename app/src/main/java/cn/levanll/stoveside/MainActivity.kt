@@ -9,7 +9,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import cn.levanll.stoveside.service.Notifier
 import cn.levanll.stoveside.service.TimerService
 import cn.levanll.stoveside.ui.StoveViewModel
@@ -26,8 +30,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         Notifier.ensureChannels(this)
         askNotificationPermission()
-        // 从后台回来时，若有进行中的计时，前台服务要接着跑
-        TimerService.start(this)
+        // 只在确实有进行中的计时时才拉起前台服务；
+        // 否则冷启动就会出现一个常驻的"没有进行中的计时"通知。
+        lifecycleScope.launch {
+            val running = withContext(Dispatchers.IO) {
+                runCatching { StoveApp.instance.repository.runningSteps() }.getOrDefault(emptyList())
+            }
+            if (running.isNotEmpty()) TimerService.start(this@MainActivity)
+        }
         setContent {
             StoveTheme {
                 val vm: StoveViewModel = viewModel()

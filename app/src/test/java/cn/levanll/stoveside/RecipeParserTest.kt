@@ -52,4 +52,19 @@ class RecipeParserTest {
         assertEquals(0, cn.levanll.stoveside.update.UpdateChecker.compareVersions("v1.0.0", "1.0.0"))
         assertEquals(1, cn.levanll.stoveside.update.UpdateChecker.compareVersions("1.2", "1.1.9"))
     }
+    @Test
+    fun `half hour with counter`() {
+        // 「一个半小时」= 90 分钟，不是 30 分钟
+        assertEquals(5400, RecipeParser.parse("炖一个半小时", "x").steps[0].durationSec)
+        assertEquals(5400, RecipeParser.parse("1个半小时", "x").steps[0].durationSec)
+        assertEquals(1800, RecipeParser.parse("半小时", "x").steps[0].durationSec)
+        // 「两小时半」= 2.5 小时 = 9000 秒，与「一个半小时」不是一回事
+        assertEquals(9000, RecipeParser.parse("两小时半", "x").steps[0].durationSec)
+    }
+
+    @Test
+    fun `english single h unit`() {
+        assertEquals(3600, RecipeParser.parse("bake 1h", "x").steps[0].durationSec)
+        assertEquals(5400, RecipeParser.parse("simmer 1.5h", "x").steps[0].durationSec)
+    }
 }

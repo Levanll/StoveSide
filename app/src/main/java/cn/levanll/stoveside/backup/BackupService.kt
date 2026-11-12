@@ -88,6 +88,10 @@ class BackupService(
             runCatching { restoreFromSnapshot(snapshot) }
             return@withContext ImportResult.Failure(it.message ?: "write_failed")
         }
+        // 语言设置也要恢复：导出时写了 settings.lang，不读回来就是个死字段
+        runCatching {
+            I18n.set(if (parsed.settings.lang == "en") I18n.Lang.EN else I18n.Lang.ZH)
+        }
         ImportResult.Success(parsed.recipes.size, parsed.cooks.size)
     }
 
@@ -122,6 +126,9 @@ class BackupService(
                 },
             )
         }.getOrElse { return@withContext ImportResult.Failure(it.message ?: "restore_failed") }
+        runCatching {
+            I18n.set(if (parsed.settings.lang == "en") I18n.Lang.EN else I18n.Lang.ZH)
+        }
         ImportResult.Success(parsed.recipes.size, parsed.cooks.size)
     }
 

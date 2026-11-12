@@ -29,6 +29,7 @@ class TimerService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
     private val notified = mutableSetOf<Pair<Long, Long?>>()
+    private var idleTicks = 0
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -60,9 +61,20 @@ class TimerService : Service() {
                     step.title,
                 )
             }
-            val next = running.filter { it.dueAt != null }
-                .minByOrNull { it.dueAt!! }
-            updateForeground(next, running.size, now)
+            // 没有进行中的计时就自行退出：冷启动不该常驻一个空转的前台服务。
+            // 连续 3 次（约 3 秒）都查不到 running 才停，避免步骤切换瞬间误判。
+            if (running.isEmpty()) {
+                idleTicks++
+                if (idleTicks >= 3) {
+                    stopForeground(true)
+                    stopSelf()
+                    return
+                }
+            } else {
+                idleTicks = 0
+                val next = running.filter { it.dueAt != null }.minByOrNull { it.dueAt!! }
+                updateForeground(next, running.size, now)
+            }
             delay(1000)
         }
     }

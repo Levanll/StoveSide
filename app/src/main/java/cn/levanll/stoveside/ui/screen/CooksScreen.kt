@@ -1,6 +1,7 @@
 package cn.levanll.stoveside.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,17 +24,22 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -206,19 +212,33 @@ private fun StepRow(vm: StoveViewModel, cook: CookView, sv: StepView) {
             }
         }
         Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
+        var editingNote by remember(step.id) { mutableStateOf(false) }
+        if (editingNote) {
+            NoteDialog(
+                initial = step.note,
+                onDismiss = { editingNote = false },
+                onSave = { text ->
+                    vm.updateNote(step, text)
+                    editingNote = false
+                },
+            )
+        }
+        // 备注整块可点：有备注显示内容，没备注显示占位提示——两处都能进入编辑
+        Column(
+            Modifier
+                .weight(1f)
+                .clickable { editingNote = true },
+        ) {
             Text(
                 step.title,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             )
-            if (step.note.isNotBlank()) {
-                Text(
-                    step.note,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text(
+                step.note.ifBlank { I18n.t("点这里写这次的做法", "Tap to note this run") },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         if (step.durationSec > 0) {
             Text(
@@ -247,4 +267,29 @@ private fun StepRow(vm: StoveViewModel, cook: CookView, sv: StepView) {
             }
         }
     }
+}
+
+/** 实例备注编辑：只改这次烹饪的 CookStep.note，不回写模板。 */
+@Composable
+private fun NoteDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var text by remember(initial) { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(I18n.t("这次的备注", "Note for this run")) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text(I18n.t("比如：火大了，下次少两分钟", "e.g. heat was high, cut 2 min next time")) },
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(text.trim()) }) { Text(I18n.t("保存", "Save")) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(I18n.t("取消", "Cancel")) }
+        },
+    )
 }

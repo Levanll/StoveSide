@@ -11,9 +11,12 @@ plugins {
  * 该文件已在 .gitignore 中排除，且发布脚本会强制扫描敏感信息。
  */
 val keystorePropsFile = rootProject.file("keystore/keystore.properties")
+// keystore/ 在 .gitignore 里，新克隆的仓库没有这个文件。
+// 直接 inputStream() 会让 ./gradlew tasks 因 FileNotFoundException 失败，所以先判存在。
 val keystoreProps = Properties().apply {
-    keystorePropsFile.inputStream().use { load(it) }
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
 }
+val hasReleaseSigning = keystorePropsFile.exists() && keystoreProps.getProperty("storeFile") != null
 
 android {
     namespace = "cn.levanll.stoveside"
@@ -23,13 +26,13 @@ android {
         applicationId = "cn.levanll.stoveside"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
         resourceConfigurations += listOf("zh", "en")
     }
 
     signingConfigs {
-        create("release") {
+        if (hasReleaseSigning) create("release") {
             storeFile = rootProject.file("keystore/" + keystoreProps.getProperty("storeFile"))
             storePassword = keystoreProps.getProperty("storePassword")
             keyAlias = keystoreProps.getProperty("keyAlias")
@@ -43,7 +46,8 @@ android {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("release")
+            // 没有 keystore 时产出未签名包，而不是让构建失败
+            signingConfig = if (hasReleaseSigning) signingConfigs.getByName("release") else null
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
