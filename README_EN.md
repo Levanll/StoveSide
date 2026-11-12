@@ -1,116 +1,193 @@
-# StoveSide · 灶暖
+# StoveSide
 
-> Several burners at once, still under control: parallel step timers, per-step notes, and separate records for every run of the same recipe.
+**Multi-timer cooking companion · Per-step notes · Every batch tracked ｜ Android, offline-first**
 
-[简体中文](README.md) ｜ **English**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?style=flat-square&logo=kotlin)](https://kotlinlang.org/)
+[![Compose](https://img.shields.io/badge/Compose-BOM%202024.06-4285F4?style=flat-square&logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
+[![Room](https://img.shields.io/badge/Room-2.6.1-3DDC84?style=flat-square)](https://developer.android.com/training/data-storage/room)
+[![minSdk](https://img.shields.io/badge/minSdk-24-3DDC84?style=flat-square&logo=android)](https://developer.android.com/about/versions/nougat)
+[![APK](https://img.shields.io/badge/APK-9.6%20MB-success?style=flat-square)](https://github.com/Levanll/StoveSide/releases/latest)
+[![i18n](https://img.shields.io/badge/i18n-%E4%B8%AD%E6%96%87%20%7C%20English-C96F4A?style=flat-square)](#)
 
-[Download the latest build](https://github.com/Levanll/StoveSide/releases/latest) ｜ [GitHub repository](https://github.com/Levanll/StoveSide)
+[中文](README.md) ｜ **English** ｜ **[Website](https://levanll.github.io/StoveSide/en/)** ｜ [Releases](https://github.com/Levanll/StoveSide/releases)
+
+![StoveSide](docs/images/hero-banner-en.png)
 
 ---
 
-## What it is
+## The 10-second version
 
-StoveSide is an Android timer built for the actual moment of cooking. It is not a recipe collection manager; it solves the twenty frantic minutes when the soup is simmering, the fish is steaming, the stir-fry is on high heat and the rice is coming up — and every step still needs to be tracked, with whatever you changed on the fly written down.
+A **kitchen timer for Android** — but it does not remember recipes. It remembers *which pot is at which step, right now*.
 
-Break a recipe into steps, each with its own timer. Every cooking session opens a cook instance, and the same recipe can have several instances running independently at once. Notes you jot down mid-cook stay on the instance and never leak back into the recipe template.
+Split a dish into timed steps, then start a **cooking session** for each time you actually cook. **With several pots going, every step runs its own clock** and alerts you when it is done. The note you scribble — "heat was too high this time" — stays with *this* run and never pollutes the recipe. Cooking the same dish three times tonight? Start three sessions: **each advances and records independently**.
+
+Everything lives in a local Room database. **No account, no cloud sync.** Moving to a new phone means exporting one JSON file and importing it back.
+
+---
+
+## What it solves
+
+| | Feature | What it does | Why it matters |
+|---|---|---|---|
+| ⏱ | Parallel timers | Many flows at once, each step timed independently | Soup 40 min, fish 8 min, stir-fry 3 min — all running while the phone is not in your hand |
+| 📝 | Step notes | Every node takes a note; the session copy is editable | Heat level, substitutions, "two minutes less next time" — recorded on the spot |
+| 🍲 | Batch tracking | One recipe, many live sessions, fully isolated | Two pots or repeated trials never bleed progress into each other |
+| 📋 | Paste-to-steps | Paste recipe text, get editable steps with durations | No retyping line by line |
+| 🌏 | Bilingual | UI and copy in Chinese and English, persisted | Switch on one device without reinstalling; restored on next launch |
+| 💾 | Export / import | One-file full backup, schema-versioned | Moving devices, reinstalling, rolling back |
+| 🔄 | In-app update | Check, download, confirm to install | Upgrade without the Play Store |
+
+---
+
+## Quick start
+
+### 1. Install
+
+Download the latest APK from [Releases](https://github.com/Levanll/StoveSide/releases/latest) and allow "install from unknown sources".
+
+### 2. Create a recipe
+
+Open **Recipes** → `+ New recipe`. You can paste a whole recipe, tap **Preview** to see the parsed steps and durations, then tap **Use N steps**.
+
+### 3. Light the stove
+
+Go to **Cooking** and tap a recipe pill at the top (or ▶ on a card). Every tap creates a **new session** with an increasing number (`Braised pork #1`, `#2`).
+
+### 4. While cooking
+
+- ▶ starts the step timer, ⏸ pauses, `+1'` adds a minute, ✓ marks it done and lights up the next step
+- Tap the note line under any step to record what happened this run
+- While timers run, the notification shows the time left; when a step is due you get sound and vibration
+
+### Requirements
+
+- Android 7.0 (API 24) or newer
+- About 9.6 MB; works fully offline (only "Check for updates" needs the network)
+
+---
 
 ## Screenshots
 
-| Cooks in progress | Recipe library | Settings |
-| --- | --- | --- |
-| ![Parallel cook timers](docs/images/screenshot-cooks.png) | ![Recipes and steps](docs/images/screenshot-recipes.png) | ![Settings, export and import](docs/images/screenshot-settings.png) |
+> Captured on a real Android 14 emulator build, no mockups.
 
-## Features
+| Cooking · parallel timers | Recipes · template vs session |
+|---|---|
+| ![Cooking](docs/images/screenshot-cooks.png) | ![Recipes](docs/images/screenshot-recipes.png) |
+| *Braised pork #1 and Tremella soup #2 advance together, each counting down on its own* | *The same recipe can be started repeatedly; each session stays isolated* |
 
-- **Parallel multi-flow timers** — Run several cooking flows at the same time, each step with its own countdown, none of them blocking the others. Remaining time is shown together, and alerts fire when a step is due.
-- **Per-step notes** — Any step can carry a note: heat level, a last-minute substitution, what to change next time.
-- **Multiple instances of one recipe** — The same recipe can spawn several cook instances at once, each tracking its own progress and notes — handy for two pots at a time or for repeated test runs.
-- **Paste text, get steps** — Paste a block of recipe text and it is split into steps by line breaks and numbering, so nothing has to be typed in step by step.
-- **Chinese and English** — The interface follows the system language and switches between Chinese and English.
-- **Export and import** — All data can be exported as a backup and imported back after reinstalling or moving to a new phone.
-- **In-app updates** — The app checks for a newer build on launch and can download and install the update without leaving it.
+| Settings · language / data / updates | English UI |
+|---|---|
+| ![Settings](docs/images/screenshot-settings.png) | ![English](docs/images/screenshot-cooks-en.png) |
+| *Export, import and update checks all live here* | *After switching to English, it survives a process kill and relaunch* |
 
-## Data model
+---
 
-Templates and instances are strictly separated — that is the core design of the app:
+## Capabilities
+
+| Capability | Detail |
+|---|---|
+| Parallel flows | 5+ concurrent flows, one scheduler loop, never blocking |
+| Wall-clock timing | Due times persist in the database, so process death, reboot and screen-off never skew them |
+| Due alerts | Foreground service + notification channel, sound and vibration |
+| Two-level notes | Template default plus session override; session edits never write back |
+| Text parsing | Chinese numerals, `1.5 hours`, `一个半小时`, `90 seconds`, `1h` all recognized |
+| Bilingual switch | Takes effect immediately, persists to disk, restored on cold start |
+| Backup | Single JSON file; a snapshot is taken before import and restored on failure |
+| In-app update | Reads GitHub Releases, downloads into app-private storage, installs only after confirmation |
+
+---
+
+## Why template + session
+
+This is the foundation. If two dishes shared one set of step states they would trample each other; if editing a template rewrote history, "traceable" would be meaningless.
 
 ```
-Recipe (template) ──< Step
-Recipe (template) ──< Cook (instance) ──< CookStep (per-instance step record)
+Recipe ──< Step            (the template: how this dish should be made)
+Recipe ──< Cook ──< CookStep (the session: how this run actually went)
 ```
 
-- **Recipe → Step**: the template only answers "how is this dish made" and can be reused indefinitely.
-- **Recipe → Cook → CookStep**: every real cooking session creates a Cook, and step state plus notes live on its CookSteps.
-- **Notes never write back**: anything changed during a session stays inside that session; the template stays clean.
+| | Answers | Who edits it |
+|---|---|---|
+| Recipe / Step | How the dish **should** be made | While editing the recipe |
+| Cook / CookStep | How this run **actually** went | Every action after lighting the stove |
+| Notes | Experience on the template, adjustments on the session | Session edits never write back |
 
-## Look and palette
-
-A warm cream base with clay orange, quiet rounded cards, and a minimal bowl-with-two-wisps-of-steam mark.
-
-| Role | Value |
-| --- | --- |
-| Cream background | `#FDF8F3` |
-| Card surface | `#FFFDFA` |
-| Clay orange (primary) | `#C96F4A` |
-| Deep clay | `#9C4F2F` |
-| Sage green | `#7E9B80` |
-| Ink text | `#3D3229` |
-| Muted text | `#7A6A5D` |
-| Dark mode background | `#211A16` |
-
-Card corners sit at 16–18dp.
-
-## Install
-
-- Requires Android 7.0 (API 24) or newer.
-- Download the latest APK from [Releases](https://github.com/Levanll/StoveSide/releases/latest) and allow installing from unknown sources when prompted.
-- Installing over an existing version keeps your data. Before a major version jump, export a backup in Settings first.
-
-## Tech stack
-
-| Item | Value |
-| --- | --- |
-| Language | Kotlin |
-| UI | Jetpack Compose (Material 3) |
-| Persistence | Room 2.6.1 |
-| Package | `cn.levanll.stoveside` |
-| minSdk / targetSdk | 24 / 34 |
-| Current version | 1.0.0 (versionCode 1) |
-
-## Build from source
-
-The repository ships `scripts/build.ps1`, defaulting to `assembleRelease`; pass another task if you need one:
-
-```powershell
-./scripts/build.ps1 -Task assembleDebug
-```
-
-The script pins both the Gradle user home and the Gradle distribution location so caches and build outputs stay off the system drive, and it invokes Gradle with `--offline --no-daemon` — dependencies must already be cached locally before the first build.
-
-Signing configuration is read from `keystore/keystore.properties`, which is excluded in `.gitignore` and never enters version control.
+---
 
 ## Project layout
 
 ```
 cooking-timer/
 ├─ app/src/main/java/cn/levanll/stoveside/
-│  ├─ data/      Room entities, DAOs, database and repository
-│  ├─ domain/    Pure logic such as time formatting
-│  ├─ service/   Foreground timer service, alarms and notifications
-│  ├─ backup/    Export and import
-│  ├─ update/    In-app update and installer
-│  ├─ i18n/      Chinese and English copy
-│  └─ ui/        Compose screens and theme
-├─ docs/         GitHub Pages site and screenshots
-└─ scripts/      Build and icon scripts
+│  ├─ data/       Room entities, DAOs, database, repository
+│  ├─ domain/     time formatting, recipe text parser
+│  ├─ service/    foreground timer service, notifications
+│  ├─ backup/     export/import, snapshot rollback
+│  ├─ update/     in-app update and installer
+│  ├─ i18n/       Chinese and English strings
+│  └─ ui/         Compose screens and theme
+├─ docs/          GitHub Pages site and screenshots
+└─ scripts/       build, release, snapshot and icon scripts
 ```
+
+---
+
+## Tech stack
+
+| Item | Detail |
+|---|---|
+| Language | Kotlin 1.9.24 |
+| UI | Jetpack Compose (Material 3, Compose BOM 2024.06) |
+| Storage | Room 2.6.1 + KSP |
+| Concurrency | Coroutines + StateFlow, single tick loop |
+| Serialization | Gson (backup format) |
+| Package | `cn.levanll.stoveside` |
+| minSdk / targetSdk | 24 / 34 |
+| Version | 1.0.2 (versionCode 3) |
+
+## Build from source
+
+The repo ships `scripts/build.ps1` (defaults to `assembleRelease`):
+
+```powershell
+./scripts/build.ps1 -Task assembleDebug
+
+# or directly
+gradle assembleRelease
+```
+
+Without a `keystore/` directory the build produces `app-release-unsigned.apk` instead of failing — you only need that directory for official signing (it is gitignored).
+
+---
+
+## Privacy at a glance
+
+| Item | This project |
+|---|---|
+| Account | None |
+| Where data lives | Local Room database on the device |
+| Network | Only "Check for updates", which calls the GitHub Releases API |
+| Uploads | No user data is ever uploaded |
+| Permissions | Notifications, vibration, network, install unknown apps |
+
+---
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md). Current version 1.0.0.
+See [CHANGELOG.md](CHANGELOG.md). Current version 1.0.2.
 
-## Links
+## Docs
 
-- Project home: https://github.com/Levanll/StoveSide
-- Downloads: https://github.com/Levanll/StoveSide/releases/latest
-- Issues: https://github.com/Levanll/StoveSide/issues
+- [Design](docs/设计方案.md) — data model, timer scheduling, parsing strategy
+- [Screen spec](docs/页面规格.md) — information hierarchy and interaction rules
+- [Delivery report](docs/交付报告.md) — release results and review fixes
+- [Security](SECURITY.md) — reporting and release scrubbing
+
+## Contributing
+
+Bugs and ideas go to [Issues](https://github.com/Levanll/StoveSide/issues). Please include Android version, device model, reproduction steps, expected and actual behaviour.
+
+## License
+
+MIT © 2026 Levanll. See [LICENSE](LICENSE).

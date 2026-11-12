@@ -32,6 +32,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCANNER = PROJECT_ROOT / "scripts" / "scan_secrets.py"
 GRADLE_FILE = PROJECT_ROOT / "app" / "build.gradle.kts"
 APK_RELATIVE = Path("app/build/outputs/apk/release/app-release.apk")
+NOTES_DIR = PROJECT_ROOT / "notes"
 DOCS_DIR = PROJECT_ROOT / "docs"
 DEFAULT_REPO = "Levanll/StoveSide"
 API_ROOT = "https://api.github.com"
@@ -363,6 +364,22 @@ def step_tag(reporter: Reporter, tag: str, message: str) -> None:
     run_git(reporter, "push", "origin", "refs/tags/" + tag)
 
 
+def step_about(gh: GitHub, repo: str, about_file: Path) -> None:
+    """把 notes/about.txt 写进仓库 About（description）。中英双语，中文在前。"""
+    if not about_file.is_file():
+        print("    没有 notes/about.txt，跳过 About 更新")
+        return
+    text = about_file.read_text(encoding="utf-8").strip()
+    # GitHub 的 description 上限 350 字符，超出会 422
+    if len(text) > 350:
+        text = text[:347].rstrip() + "..."
+    if gh.dry_run:
+        gh.reporter.action("PATCH /repos/" + repo + " body={'description': " + repr(text) + "}")
+        return
+    gh.call("PATCH", "/repos/" + repo, {"description": text}, expect=(200,))
+    print("    已更新 About（" + str(len(text)) + " 字符）")
+
+
 def step_release(gh: GitHub, repo: str, tag: str, title: str, body: str, assets: list, workdir: Path) -> None:
     status, data = gh.call("GET", "/repos/" + repo + "/releases/tags/" + tag, expect=(200, 404))
     if status == 200 and data:
@@ -373,7 +390,7 @@ def step_release(gh: GitHub, repo: str, tag: str, title: str, body: str, assets:
         status, data = gh.call(
             "POST",
             "/repos/" + repo + "/releases",
-            {"tag_name": tag, "name": title, "body": body, "draft": False, "prerelease": False},
+            {"tag_name": tag, "name": title, "body": (load_release_notes(tag) or body), "draft": False, "prerelease": False},
             expect=(201,),
         )
         if data:
@@ -393,6 +410,18 @@ def step_release(gh: GitHub, repo: str, tag: str, title: str, body: str, assets:
             )
             continue
         gh.upload(upload_url, name, path.read_bytes())
+
+
+def load_release_notes(tag: str) -> str:
+    """优先用 notes/<tag>.md：那里是人工维护的中英双语发布说明，
+    格式参考 Levanll/InventoryLedger 的 notes/ 约定。"""
+    candidate = NOTES_DIR / (tag + ".md")
+    if candidate.is_file():
+        return candidate.read_text(encoding="utf-8").strip()
+    plain = NOTES_DIR / (tag.lstrip("v") + ".md")
+    if plain.is_file():
+        return plain.read_text(encoding="utf-8").strip()
+    return ""
 
 
 def build_release_body(version_name: str, version_code: str, sha256: str) -> str:
@@ -572,6 +601,9 @@ def main(argv=None) -> int:
             workdir,
         )
 
+        reporter.step("更新仓库 About")
+        gate(reporter, "更新 About")
+        step_about(gh, args.repo, PROJECT_ROOT / "notes" / "about.txt")
         reporter.step("部署 docs/ 到 gh-pages")
         gate(reporter, "部署 gh-pages")
         if args.skip_pages:

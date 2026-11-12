@@ -1,0 +1,1 @@
+灶暖 StoveSide — 多流程并行烹饪计时 · 步骤备注 · 同菜多份独立追踪 ｜ Multi-timer cooking app with per-step notes and batch tracking. 纯本地运行，零账号 ｜ Fully offline, no account. Android 7.0+ · Kotlin / Compose · MIT
