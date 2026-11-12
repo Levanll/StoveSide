@@ -45,10 +45,16 @@
 
 ### 未验证 / 已知风险
 
-- **CI workflow 从未在 GitHub 上真实跑过**。表达式语法与 bash 已静态校验，但没触发过 `workflow_dispatch`。
+- ~~**CI workflow 从未在 GitHub 上真实跑过**~~ **已验证通过（2026-11-12）**：手动 `workflow_dispatch` 触发 run
+  [43226009748](https://github.com/Levanll/StoveSide/actions/runs/43226009748)，两个 job 全部 success——
+  build（JDK17 / Gradle 8.9 / 读版本 / 签名材料 / assembleRelease / 打包 / SHA256SUMS / 上传产物）与
+  attach（下载产物 / 组装说明 / 创建 Release）。`${{ }}` 修正确实生效，表达式中断问题不再存在。
+  验证用的临时 tag `ci-verify-20261112` 与其 draft Release 已删除，远端只留 v1.0.0/v1.0.1/v1.0.2。
+  **注意**：CI 里没有配置签名 secrets，本次产物走的是降级路径 `StoveSide-1.0.2-unsigned.apk`（未签名，不可直接安装）；
+  正式发布仍走本地 `publish.py`。
 - **导入语言恢复** 没有单测覆盖（需要 Android Context），只做了代码路径接入。
 - 未在真机（非模拟器）上跑过，只在 x86_64 API 34 模拟器验证。
-- **CHANGELOG 已修复（未提交）**：`9c69615` 曾把文件从 56 行砍到 28 行，现已从 `8458ef0` 取回 `## [Unreleased]`、
+- **CHANGELOG 已修复并提交**（`88da59e`）：`9c69615` 曾把文件从 56 行砍到 28 行，现已从 `8458ef0` 取回 `## [Unreleased]`、
   `## [1.0.0]` 整节（8 条双语 Added + Known limitations）、文件头说明段与底部 compare/tag 链接，
   H1 已提到文件最前，版本按倒序排列（Unreleased → 1.0.2 → 1.0.0），共 64 行。
 - ~~`scripts/__pycache__/` 未被 `.gitignore` 覆盖~~ **已解决**：`.gitignore` 现有 `__pycache__/` 与 `*.pyc`，
