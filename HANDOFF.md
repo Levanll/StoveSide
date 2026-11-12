@@ -48,6 +48,10 @@
 - **CI workflow 从未在 GitHub 上真实跑过**。表达式语法与 bash 已静态校验，但没触发过 `workflow_dispatch`。
 - **导入语言恢复** 没有单测覆盖（需要 Android Context），只做了代码路径接入。
 - 未在真机（非模拟器）上跑过，只在 x86_64 API 34 模拟器验证。
+- **CHANGELOG 当前是残缺的（待修）**：`9c69615` 合并重复的 1.0.2 标题时把文件从 56 行砍到 28 行，
+  丢掉了 `## [Unreleased]`、`## [1.0.0]` 整节（8 条双语 Added + Known limitations）、文件头说明段与底部 compare/tag 链接；
+  且 H1 `# 更新日志 · Changelog` 排在正文末尾，顺序颠倒。完整内容可从 `git show 8458ef0:CHANGELOG.md` 取回。
+- **`scripts/__pycache__/` 未被 `.gitignore` 覆盖**：跑过 `py_compile` 后 `git add -A` 会把它带进公开仓库。
 
 ---
 
@@ -260,7 +264,7 @@ D:/python/python.exe scripts/publish.py --public --yes
 | `docs/页面规格.md` | 三个页面的信息层级与交互约束 |
 | `docs/交付报告.md` | 上线结果与审查修复记录 |
 | `notes/` | Release 说明与 About 源文件 |
-| `CHANGELOG.md` | Keep a Changelog，中英双语条目 |
+| `CHANGELOG.md` | 目标是 Keep a Changelog + 中英双语；**目前残缺，见第二节「已知风险」** |
 
 ### 截图按语言分目录
 
@@ -347,10 +351,11 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 
 按优先级：
 
-1. **让 CI 真实跑一次** — 在 GitHub 上手动触发 `workflow_dispatch`，输入 tag，确认 `${{ }}` 修正确实生效。这是唯一还没被验证的环节
-2. **真机验证** — 目前只在模拟器上跑过
-3. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
-4. **A5 内置示例食谱 / A6 桌面小组件** — 用户当时没勾选，要做先确认
+1. **修复 CHANGELOG（先做这个）** — 从 `git show 8458ef0:CHANGELOG.md` 取回 `[Unreleased]` 与 `[1.0.0]` 两节，把 H1 提到文件最前，版本按倒序排（Unreleased → 1.0.2 → 1.0.0），底部补回 compare / tag 链接。顺带在 `.gitignore` 补 `__pycache__/` 与 `*.pyc`。这是已确认的实质回退，不是可选项
+2. **让 CI 真实跑一次** — 在 GitHub 上手动触发 `workflow_dispatch`，输入 tag，确认 `${{ }}` 修正确实生效。这是唯一还没被验证的环节
+3. **真机验证** — 目前只在模拟器上跑过
+4. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
+5. **A5 内置示例食谱 / A6 桌面小组件** — 用户当时没勾选，要做先确认
 
 ---
 
