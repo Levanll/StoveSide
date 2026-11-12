@@ -19,7 +19,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: build-release-${ inputs.tag }}
+  group: build-release-${{ inputs.tag }}
   cancel-in-progress: false
 
 env:
@@ -32,10 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     outputs:
-      signed: ${ steps.signing.outputs.signed }}
-      apk_name: ${ steps.package.outputs.apk_name }}
-      version_name: ${ steps.version.outputs.version_name }}
-      version_code: ${ steps.version.outputs.version_code }}
+      signed: ${{ steps.signing.outputs.signed }}
+      apk_name: ${{ steps.package.outputs.apk_name }}
+      version_name: ${{ steps.version.outputs.version_name }}
+      version_code: ${{ steps.version.outputs.version_code }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,12 +46,12 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${ env.JAVA_VERSION }}
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: ${ env.GRADLE_VERSION }}
+          gradle-version: ${{ env.GRADLE_VERSION }}
 
       - name: Read version from app/build.gradle.kts
         id: version
@@ -71,10 +71,10 @@ jobs:
       - name: Prepare signing material
         id: signing
         env:
-          KEYSTORE_BASE64: ${ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${ secrets.KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -euo pipefail
           mkdir -p keystore
@@ -110,8 +110,8 @@ jobs:
       - name: Package artifact
         id: package
         env:
-          VERSION_NAME: ${ steps.version.outputs.version_name }}
-          SIGNED: ${ steps.signing.outputs.signed }}
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
           set -euo pipefail
           apk=app/build/outputs/apk/release/app-release.apk

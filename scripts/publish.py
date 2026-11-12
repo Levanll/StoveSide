@@ -380,6 +380,30 @@ def step_about(gh: GitHub, repo: str, about_file: Path) -> None:
     print("    已更新 About（" + str(len(text)) + " 字符）")
 
 
+def sync_site_version(reporter: Reporter) -> None:
+    """发布前把 gradle 里的版本号同步到站点与 README。
+
+    站点首页那句「版本 x.y.z」是 HTML 里写死的，改版本号时最容易漏
+    ——1.0.1 与 1.0.2 两版都漏成了 1.0.0。这里强制同步，版本号只有一个真相来源。
+    """
+    script = PROJECT_ROOT / "scripts" / "sync_version.py"
+    if not script.is_file():
+        return
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    output = (proc.stdout or "").strip()
+    if proc.returncode != 0:
+        raise PublishError("版本号同步失败：\n" + _scrub(output))
+    for line in output.splitlines():
+        reporter.info(line)
+
+
 def step_release(gh: GitHub, repo: str, tag: str, title: str, body: str, assets: list, workdir: Path) -> None:
     status, data = gh.call("GET", "/repos/" + repo + "/releases/tags/" + tag, expect=(200, 404))
     if status == 200 and data:
@@ -601,6 +625,8 @@ def main(argv=None) -> int:
             workdir,
         )
 
+        reporter.step("同步版本号到站点与文档")
+        sync_site_version(reporter)
         reporter.step("更新仓库 About")
         gate(reporter, "更新 About")
         step_about(gh, args.repo, PROJECT_ROOT / "notes" / "about.txt")
