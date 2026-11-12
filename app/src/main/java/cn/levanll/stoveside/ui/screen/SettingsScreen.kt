@@ -32,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cn.levanll.stoveside.BuildConfig
+import cn.levanll.stoveside.service.AlarmPrefs
+import cn.levanll.stoveside.service.AlarmService
 import cn.levanll.stoveside.StoveApp
 import cn.levanll.stoveside.backup.BackupService
 import cn.levanll.stoveside.backup.ImportResult
@@ -53,6 +55,7 @@ fun SettingsScreen(vm: StoveViewModel, modifier: Modifier = Modifier) {
     }
     var message by remember { mutableStateOf("") }
     var lang by remember { mutableStateOf(I18n.lang) }
+    var alarmMode by remember { mutableStateOf(AlarmPrefs.mode) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -91,6 +94,45 @@ fun SettingsScreen(vm: StoveViewModel, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
+        }
+
+        item {
+            SectionCard(I18n.t("到点提醒", "Timer alarm")) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { AlarmPrefs.set(AlarmPrefs.Mode.SOUND_AND_VIBRATE); alarmMode = AlarmPrefs.mode },
+                        enabled = alarmMode != AlarmPrefs.Mode.SOUND_AND_VIBRATE,
+                    ) { Text(I18n.t("响铃 + 震动", "Sound + vibrate")) }
+                    OutlinedButton(
+                        onClick = { AlarmPrefs.set(AlarmPrefs.Mode.VIBRATE_ONLY); alarmMode = AlarmPrefs.mode },
+                        enabled = alarmMode != AlarmPrefs.Mode.VIBRATE_ONLY,
+                    ) { Text(I18n.t("仅震动", "Vibrate only")) }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { AlarmPrefs.set(AlarmPrefs.Mode.NOTIFICATION_ONLY); alarmMode = AlarmPrefs.mode },
+                        enabled = alarmMode != AlarmPrefs.Mode.NOTIFICATION_ONLY,
+                    ) { Text(I18n.t("仅通知", "Notification only")) }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    I18n.t(
+                        "到点后会一直响到你点「知道了」，不会自己停",
+                        "It keeps ringing until you tap \"Got it\"; it will not stop on its own",
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = {
+                    AlarmService.start(
+                        ctx,
+                        I18n.t("试听：到点了", "Test: timer done"),
+                        I18n.t("这是一次试听，点「知道了」停止", "This is a test alarm; tap \"Got it\" to stop"),
+                    )
+                }) { Text(I18n.t("试听", "Try it")) }
+            }
         }
 
         item {

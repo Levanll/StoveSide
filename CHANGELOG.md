@@ -5,6 +5,23 @@
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-11-12
+
+### Added · 新增
+
+- **持续到点提醒**：到点后持续响铃 + 震动，直到用户点通知上的「知道了」或在「在煮」页点「+1 分钟」续上。此前只是一次性通知，一两秒就结束，人不在手机边就会错过。
+  Persistent alarms that ring and vibrate until dismissed, instead of a one-shot notification that is easy to miss.
+- **提醒方式可配置**：设置页三档——响铃 + 震动（默认）、仅震动、仅通知，并附「试听」入口。
+  Selectable alarm style in Settings: sound + vibrate (default), vibrate only, notification only, with a test button.
+
+### Fixed · 修复
+
+- **「加一分钟」加不满一分钟**：到点后 `dueAt` 停在过去且越走越远，原先以它为基准加 60 秒，加上的时间被已过期时长吃掉——归零 40 秒后点只剩 20 秒，归零 60 秒后点等于没反应。改为 `max(now, dueAt)` 起算，并抽出 `TimeText.extendDue` 加 6 条回归测试。
+  "Add one minute" added less than a minute: once overdue, the stale deadline ate most of the added time. Now computed from `max(now, dueAt)`, extracted into `TimeText.extendDue` with six regression tests.
+- **「+1」按钮不显眼**：由无边框小字改为描边按钮，文案为「+1 分钟 / +1 min」。
+  The "+1" control was bare text; it is now an outlined button labelled "+1 min".
+- **到期后无法区分已过多久**：归零步骤额外显示「已到点 / Overdue」。
+  Overdue steps now show an "Overdue" label instead of looking identical to the moment they hit zero.
 ## [1.0.3] - 2026-11-12
 
 ### Fixed · 修复
@@ -72,7 +89,8 @@ README / About / Release 排版对齐 `Levanll/InventoryLedger` 的既有约定�
 - 应用内更新依赖 GitHub Releases 的发布产物。
   In-app updates rely on the assets published in GitHub Releases.
 
-[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.4
 [1.0.3]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.3
 [1.0.2]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.2
 [1.0.0]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.0

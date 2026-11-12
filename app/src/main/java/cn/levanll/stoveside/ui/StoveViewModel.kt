@@ -10,7 +10,9 @@ import cn.levanll.stoveside.data.entity.CookStep
 import cn.levanll.stoveside.data.entity.Recipe
 import cn.levanll.stoveside.data.entity.Step
 import cn.levanll.stoveside.domain.RecipeParser
+import cn.levanll.stoveside.domain.TimeText
 import cn.levanll.stoveside.i18n.I18n
+import cn.levanll.stoveside.service.AlarmService
 import cn.levanll.stoveside.service.TimerService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -21,7 +23,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** 单步运行态：数据来自 Room，倒计时由 ticker 派生，不落库 */
-data class StepView(val step: CookStep, val remainingMs: Long)
+data class StepView(val step: CookStep, val remainingMs: Long) {
+    /**
+     * 已过期多久（毫秒）。0 表示还没到点。
+     * 归零后 dueAt 停在过去不会自动清理，界面需要靠它区分
+     * 「刚归零」和「已经过去三分钟」，否则两者都是红色的 00:00。
+     */
+    val overdueMs: Long get() = if (step.status == "running" && remainingMs < 0) -remainingMs else 0L
+    val isOverdue: Boolean get() = overdueMs > 0L
+}
 
 data class CookView(
     val cook: Cook,
@@ -186,15 +196,27 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
+    /**
+     * 加一分钟。
+     *
+     * 基准必须是 max(now, due)：到点后 dueAt 会停在过去（本 App 到点只提醒、不改状态），
+     * 若继续以旧 dueAt 为基准，加上的 60 秒会被「已过期时长」吃掉——
+     * 归零 40 秒后点一次只加 20 秒，归零 60 秒后点等于没反应。
+     * 反过来，未到点时若直接用 now 当基准，会把「还剩 5 分钟」重置成 60 秒，
+     * 所以取两者较晚的一个，两种场景才对。
+     */
     fun addOneMinute(step: CookStep) = launchAction {
         val due = step.dueAt
+        if (due == null) {
+            repo.updateCookStep(step.copy(durationSec = step.durationSec + 60))
+            return@launchAction
+        }
+        val newDue = TimeText.extendDue(dueAt = due, now = System.currentTimeMillis())
         repo.updateCookStep(
-            if (due == null) {
-                step.copy(durationSec = step.durationSec + 60)
-            } else {
-                step.copy(dueAt = due + 60_000L, durationSec = step.durationSec + 60)
-            }
+            step.copy(dueAt = newDue, durationSec = step.durationSec + 60)
         )
+        // 用户跑到这一步点「+1 分钟」，等于已经知道到点了，铃声不该继续在耳边叫
+        AlarmService.stop(getApplication())
     }
 
     fun updateNote(step: CookStep, note: String) = launchAction {

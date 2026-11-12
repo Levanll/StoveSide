@@ -54,12 +54,14 @@ class TimerService : Service() {
                 .filter { (it.id to it.dueAt) !in notified }
             for (step in due) {
                 notified += step.id to step.dueAt
-                Notifier.due(
-                    this,
-                    (Notifier.ID_DUE_BASE + step.id).toInt(),
-                    I18n.t("到点了", "Timer done"),
-                    step.title,
-                )
+                val title = I18n.t("到点了", "Timer done")
+                val text = step.title
+                if (AlarmPrefs.mode == AlarmPrefs.Mode.NOTIFICATION_ONLY) {
+                    Notifier.due(this, (Notifier.ID_DUE_BASE + step.id).toInt(), title, text)
+                } else {
+                    // 响铃档交给 AlarmService 持有前台通知并持续发声/震动
+                    AlarmService.start(this, title, text)
+                }
             }
             // 没有进行中的计时就自行退出：冷启动不该常驻一个空转的前台服务。
             // 连续 3 次（约 3 秒）都查不到 running 才停，避免步骤切换瞬间误判。

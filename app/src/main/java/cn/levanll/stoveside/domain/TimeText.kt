@@ -4,6 +4,20 @@ import cn.levanll.stoveside.i18n.I18n
 
 object TimeText {
 
+    /**
+     * 「加一分钟」之后的新到期时刻。
+     *
+     * 基准取 max(now, dueAt)，不是直接 dueAt + 60s：
+     * 本 App 到点只提醒、不改状态，dueAt 归零后会停在过去并越走越远，
+     * 以它为基准时加上的 60 秒会被「已过期时长」吃掉——
+     * 归零 40 秒后点一次只剩 20 秒，归零 60 秒后点看起来毫无反应。
+     * 反过来若直接用 now 当基准，未到点（还剩 5 分钟）时点 +1
+     * 会把剩余重置成 60 秒，所以必须取两者较晚的一个。
+     */
+    fun extendDue(dueAt: Long, now: Long, addMs: Long = 60_000L): Long =
+        maxOf(now, dueAt) + addMs
+
+
     /** 剩余毫秒 → 「12:05」或「1:02:03」，负数按 0 处理 */
     fun clock(remainingMs: Long): String {
         val total = (remainingMs / 1000).coerceAtLeast(0)

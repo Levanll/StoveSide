@@ -38,8 +38,21 @@
                 android:value="cooking_countdown" />
         </service>
 
+        <service
+            android:name=".service.AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="cooking_alarm" />
+        </service>
+
         <receiver
             android:name=".service.AlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".service.AlarmDismissReceiver"
             android:exported="false" />
 
         <provider

@@ -144,7 +144,7 @@ cooking-timer/
 | Serialization | Gson (backup format) |
 | Package | `cn.levanll.stoveside` |
 | minSdk / targetSdk | 24 / 34 |
-| Version | 1.0.3 (versionCode 4) |
+| Version | 1.0.4 (versionCode 5) |
 
 ## Build from source
 
@@ -175,7 +175,7 @@ Without a `keystore/` directory the build produces `app-release-unsigned.apk` in
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md). Current version 1.0.3.
+See [CHANGELOG.md](CHANGELOG.md). Current version 1.0.4.
 
 ## Docs
 

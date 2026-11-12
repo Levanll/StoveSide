@@ -1,5 +1,6 @@
 package cn.levanll.stoveside.ui.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -33,6 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -252,20 +254,40 @@ private fun StepRow(vm: StoveViewModel, cook: CookView, sv: StepView) {
             )
         }
         if (step.durationSec > 0) {
-            Text(
-                if (running) TimeText.clock(sv.remainingMs) else TimeText.duration(step.durationSec),
-                // 英文标题更长，时间需要留出独立的间距，否则会贴上去像被吃掉
-                modifier = Modifier.padding(start = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (running) FontWeight.Bold else FontWeight.Normal,
-                color = if (running && sv.remainingMs < 60_000) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    if (running) TimeText.clock(sv.remainingMs) else TimeText.duration(step.durationSec),
+                    // 英文标题更长，时间需要留出独立的间距，否则会贴上去像被吃掉
+                    modifier = Modifier.padding(start = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (running) FontWeight.Bold else FontWeight.Normal,
+                    color = if (running && sv.remainingMs < 60_000) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                // 归零后单独标出「已到点」，和刚跳到 00:00 的瞬间区分开
+                if (running && sv.isOverdue) {
+                    Text(
+                        I18n.t("已到点", "Overdue"),
+                        modifier = Modifier.padding(start = 8.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
         }
         if (!done) {
             if (running) {
-                TextButton(onClick = { vm.addOneMinute(step) }, contentPadding = PaddingValues(horizontal = 6.dp)) {
-                    Text("+1'", style = MaterialTheme.typography.labelMedium)
+                OutlinedButton(
+                    onClick = { vm.addOneMinute(step) },
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                ) {
+                    Text(
+                        I18n.t("+1 分钟", "+1 min"),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                    )
                 }
             }
             IconButton(onClick = { if (running) vm.pauseStep(step) else vm.startStep(step) }) {
