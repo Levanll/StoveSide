@@ -1,7 +1,7 @@
 # HANDOFF — 项目交接
 
 > 给接手这个项目的下一个 AI 会话 / 开发者。读完这一份就能继续干活，不必翻历史对话。
-> 最后更新：2026-11-13，对应 v1.0.4（versionCode 5）。
+> 最后更新：2026-11-13，对应 v1.0.5（versionCode 6）。
 
 ---
 
@@ -25,11 +25,11 @@
 
 | 项 | 状态 |
 |---|---|
-| 版本 | 1.0.4（versionCode 5） |
+| 版本 | 1.0.5（versionCode 6） |
 | main 分支 | 干净，与 origin 同步 |
-| Releases | v1.0.0 / v1.0.1 / v1.0.2，各含 `StoveSide-<版本>.apk` + `SHA256SUMS` |
+| Releases | v1.0.0 / v1.0.1 / v1.0.2 / v1.0.3 / v1.0.4 / v1.0.5，各含 `StoveSide-<版本>.apk` + `SHA256SUMS` |
 | Pages | 已部署（gh-pages 分支），中英双页 |
-| About | 中英双语，中文在前，185 字符 |
+| About | 中英双语，中文在前，208 字符 |
 | Topics | android / kotlin / jetpack-compose / cooking / timer / room / bilingual |
 | 单测 | 14 个用例，全过 |
 
@@ -40,8 +40,11 @@
 - 步骤备注：点备注行 → 弹窗 → 保存 → 落库到该实例的 `CookStep.note`
 - 中英切换：切换后杀进程重启仍保持
 - 前台服务：冷启动 0 个 ServiceRecord；点开始 = 1；全部暂停 7 秒后归 0
-- 到期通知：channel=due 实际触发
-- 签名：`CN=StoveSide, O=Levanll`，三版一致，可覆盖安装
+- 到期通知：响铃档走 `due_loud_v2`，仅通知档走 `due`
+- **持续响铃（1.0.4 起）**：`AlarmService` 前台服务 + `MediaPlayer` 循环 + `Vibrator` 波形循环 + `PARTIAL_WAKE_LOCK`；实测 STREAM_ALARM 正在播放
+- **响铃停止路径（1.0.5 起）**：点「知道了」、划掉通知（`setDeleteIntent`）、点「+1 分钟」、暂停、完成、删除实例，六个入口实测都能让 `AlarmService` 计数归 0
+- 粘贴区已改为 `ModalBottomSheet`，键盘弹出时最后一行与光标手柄不再越界
+- 签名：`CN=StoveSide, O=Levanll`，全版本一致，可覆盖安装
 
 ### 未验证 / 已知风险
 
@@ -49,11 +52,14 @@
   [43226009748](https://github.com/Levanll/StoveSide/actions/runs/43226009748)，两个 job 全部 success——
   build（JDK17 / Gradle 8.9 / 读版本 / 签名材料 / assembleRelease / 打包 / SHA256SUMS / 上传产物）与
   attach（下载产物 / 组装说明 / 创建 Release）。`${{ }}` 修正确实生效，表达式中断问题不再存在。
-  验证用的临时 tag `ci-verify-20261112` 与其 draft Release 已删除，远端只留 v1.0.0/v1.0.1/v1.0.2。
+  验证用的临时 tag `ci-verify-20261112` 与其 draft Release 已删除（当时远端只留到 v1.0.2，现已到 v1.0.5）。
   **注意**：CI 里没有配置签名 secrets，本次产物走的是降级路径 `StoveSide-1.0.2-unsigned.apk`（未签名，不可直接安装）；
   正式发布仍走本地 `publish.py`。
 - **导入语言恢复** 没有单测覆盖（需要 Android Context），只做了代码路径接入。
 - 未在真机（非模拟器）上跑过，只在 x86_64 API 34 模拟器验证。
+- **持续响铃的真机表现未经证实**：模拟器无振动马达、音频为虚拟输出。厨房场景下闹钟音量流是否够响、息屏后是否持续、厂商省电策略（小米/华为/Oppo 会额外限制后台）都是未知。
+- **通知渠道不可迁移**：`due_loud_v2` 是新建的 id。如果用户装过 1.0.4 之前的版本，旧 `due_loud` 渠道仍留在系统里，且新渠道会被系统当作全新渠道重置为默认。渠道属性一旦创建即归用户所有，代码无法改回。
+- **「+1 分钟」修复的端到端验证缺失**：正确性由 6 条单测覆盖（`TimeTextTest`），但没能在模拟器上完整点通一次——列表会因运行中计时常重排，固定坐标的 `input tap` 总是打偏。真机第一次验证时建议重点看这条。
 - **CHANGELOG 已修复并提交**（`88da59e`）：`9c69615` 曾把文件从 56 行砍到 28 行，现已从 `8458ef0` 取回 `## [Unreleased]`、
   `## [1.0.0]` 整节（8 条双语 Added + Known limitations）、文件头说明段与底部 compare/tag 链接，
   H1 已提到文件最前，版本按倒序排列（Unreleased → 1.0.2 → 1.0.0），共 64 行。
@@ -153,6 +159,25 @@ Recipe ──< Cook ──< CookStep   (实例：这次实际怎么走的)
 - `TimerService.tickLoop` 连续 3 次查不到 running 就 `stopSelf()` 自行退出
 - 到点**只提醒、不改状态**。曾经提醒时把状态打回 `pending`，导致「+1 分钟」无处可点、用户也看不出这锅还在跑
 
+### 到点提醒（`service/AlarmService.kt`，1.0.4 起）
+
+系统通知的响铃只在发出瞬间响一次（1–2 秒），人不在灶台边必然错过。要做「持续响铃」就没有捷径，必须由应用自己持有播放器并用前台服务保活：
+
+| 组件 | 作用 |
+|---|---|
+| `AlarmService` | 前台服务；持 `MediaPlayer` 循环、`Vibrator` 波形循环、`PARTIAL_WAKE_LOCK` |
+| `AlarmPrefs` | 三档偏好（响铃+震动 / 仅震动 / 仅通知），存 `stoveside_prefs` / `alarm_mode` |
+| `AlarmDismissReceiver` | 通知上「知道了」按钮的广播接收器 |
+| `Notifier` | 三个 channel：`due`（仅通知）、`due_loud_v2`（响铃，channel 静音）、`due_vibrate`（仅震动） |
+
+四条硬约束：
+
+1. **channel 属性一经创建即不可改**。想改声音/震动只能换 channel id——`due_loud_v2` 的 `_v2` 就是因为 `due_loud` 带了 channel 级声音、会与 MediaPlayer 叠成「重音」。
+2. **channel 自身必须静音**。声音统一由 `AlarmService` 的 `MediaPlayer` 出，否则开头会响两次。
+3. **声音走 `USAGE_ALARM` 音频流**，不是通知流。做饭时手机常放得远或连着音箱，通知流会被压得很低。
+4. **每个「结束这锅」的路径都必须停铃**。`AlarmService.stop` 现在挂在 `addOneMinute` / `pauseStep` / `completeStep` / `deleteCook` 四处，外加通知的「知道了」与 `setDeleteIntent`（划掉通知）。**新增任何改变计时状态的入口时，记得补这一行**，否则又会出现「处理完了铃声还在响」。
+
+另外：`ACTION_DISMISS_ALARM` 这个 action 目前没有发送方，是 1.0.5 清掉的死代码；通知用 `PendingIntent.getBroadcast` 而非 `getService`，因为后台点通知时拉前台服务会撞 Android 12+ 的后台启动限制。
 ### 文本解析（`domain/RecipeParser.kt`）
 
 - 正则顺序：`halfHourPattern`（「一个半小时」）**必须排在** `timePattern` 之前，否则 `个` 会截断数字段，「一个半小时」被算成 30 分钟
@@ -362,17 +387,22 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 | 英文长菜名把胶囊挤成竖条 | `Row` 放不下 | 已改 `horizontalScroll` |
 | 英文步骤标题和时间贴在一起 | 缺间距 | 时间加了 8dp 左间距，标题/备注限 2 行 + 省略号 |
 | 工作流写成 `${ ... }}` | 缺一个 `$`，GitHub 只认 `${{ }}` | 已修 13 处；改完用 `python -c "import yaml;yaml.safe_load(open(...))"` 验一遍 |
+| 改了通知渠道声音/震动却不生效 | channel 创建后属性归用户所有，代码再改无效 | 换新 channel id（如 `due_loud_v2`），代价是系统把新渠道当全新渠道 |
+| 铃声停不掉，只能强杀 App | 响铃与计时状态脱钩，或通知被划走导致「知道了」消失 | 每个改状态的入口补 `AlarmService.stop`；通知补 `setDeleteIntent` |
+| bash 里跑 `bin/gradle` 报 `agent library failed to init: instrument` | winuxcmd 的 `cygpath` 把 `F:` 转成 `F;`，写坏 `-javaagent` 路径 | 用 `cmd /c gradle.bat` 走原生入口，别走 sh 脚本 |
 
 ---
 
 ## 十、下一步可以做什么
 
+已完成（不用再做）：CHANGELOG 修复（`88da59e`）、CI 首次真实跑通（run 43226009748）、编辑器 IME 遮挡与选区手柄（`2b7fafd`）、持续响铃与 +1 分钟修复（1.0.4 / 1.0.5）。
+
 按优先级：
 
-1. ~~**修复 CHANGELOG（先做这个）**~~ **已完成（工作区已修，未提交）** — `[Unreleased]` 与 `[1.0.0]` 两节已从 `8458ef0` 取回，H1 提到文件最前，版本倒序，底部 compare / tag 链接已补；`.gitignore` 的 `__pycache__/` 与 `*.pyc` 此前已补齐。剩一步：等主人批准后提交推送
-2. **让 CI 真实跑一次** — 在 GitHub 上手动触发 `workflow_dispatch`，输入 tag，确认 `${{ }}` 修正确实生效。这是唯一还没被验证的环节
-3. **真机验证** — 目前只在模拟器上跑过
-4. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
+1. **真机验证持续响铃** — 最该做的一条。模拟器证明不了响度、震感和息屏持续性；厂商省电策略也是未知数。重点看：厨房 3–5 米能否听见、息屏后会不会断、被限制后台时有没有降级
+2. **真机验证「+1 分钟」** — 挑一个 1 分钟的步骤，归零后等半分钟再点，应变成 `01:00`。单测证明了算法，但没在真机上点通过
+3. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
+4. **全屏闹钟界面（可选）** — 到点亮屏弹窗。代价是 Android 14+ 对 `USE_FULL_SCREEN_INTENT` 默认拒绝，要处理系统设置跳转；收益是可感知性提升最大。做之前先和用户确认
 5. **A5 内置示例食谱 / A6 桌面小组件** — 用户当时没勾选，要做先确认
 
 ---
