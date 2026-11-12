@@ -5,6 +5,18 @@
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-12
+
+### Fixed · 修复
+
+- **新建食谱时最后几行被键盘挡住**：`enableEdgeToEdge()` 之后窗口不再随键盘缩放，界面又没有任何一处消费 IME inset，键盘弹起时内容原地不动。编辑页现在正确让出键盘高度。
+  The last lines were hidden behind the keyboard on the new-recipe screen: after edge-to-edge the window stops resizing, and nothing consumed the IME inset. The editor now reserves the keyboard height.
+- **光标选区手柄浮在键盘上方**：同一根因，手柄按光标位置绘制而光标行正被键盘盖住。现在手柄随文字上移，不再越界。
+  The selection handle floated above the keyboard for the same reason: it is drawn at the cursor position while that line sat under the keyboard. It now moves up with the text.
+- **输入框获得焦点后不会自动滚入可视区**：菜名、整体备注、步骤标题、分钟四个输入框现在获焦即滚到可见位置。
+  Text fields did not scroll into view on focus; the name, notes, step title and minutes fields now do.
+- **粘贴区改为独立底部弹层**：原先内嵌在列表里受滚动容器约束，现在输入框独占一屏、识别结果单独滚动。
+  The paste area is now a modal bottom sheet instead of an inline list item, giving the input its own space and letting the parsed result scroll separately.
 ## [1.0.2] - 2026-11-12
 
 ### 文档改版
@@ -60,5 +72,7 @@ README / About / Release 排版对齐 `Levanll/InventoryLedger` 的既有约定�
 - 应用内更新依赖 GitHub Releases 的发布产物。
   In-app updates rely on the assets published in GitHub Releases.
 
-[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.3
+[1.0.2]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.2
 [1.0.0]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.0
