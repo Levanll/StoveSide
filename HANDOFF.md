@@ -1,7 +1,7 @@
 # HANDOFF — 项目交接
 
 > 给接手这个项目的下一个 AI 会话 / 开发者。读完这一份就能继续干活，不必翻历史对话。
-> 最后更新：2026-11-12，对应 v1.0.2（versionCode 3）。
+> 最后更新：2026-11-13，对应 v1.0.4（versionCode 5）。
 
 ---
 
@@ -25,13 +25,13 @@
 
 | 项 | 状态 |
 |---|---|
-| 版本 | 1.0.2（versionCode 3） |
+| 版本 | 1.0.4（versionCode 5） |
 | main 分支 | 干净，与 origin 同步 |
 | Releases | v1.0.0 / v1.0.1 / v1.0.2，各含 `StoveSide-<版本>.apk` + `SHA256SUMS` |
 | Pages | 已部署（gh-pages 分支），中英双页 |
 | About | 中英双语，中文在前，185 字符 |
 | Topics | android / kotlin / jetpack-compose / cooking / timer / room / bilingual |
-| 单测 | 8 个用例，全过 |
+| 单测 | 14 个用例，全过 |
 
 ### 已验证可用（模拟器实测）
 

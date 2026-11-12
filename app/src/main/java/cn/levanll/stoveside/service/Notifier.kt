@@ -21,8 +21,14 @@ object Notifier {
     /** 旧channel：只发通知不发声，保留给「仅通知」档并兼容已存在的用户设置。 */
     const val CHANNEL_DUE = "due"
 
-    /** 响铃+震动。channel 建好后属性不可改，所以响铃方式必须用不同 channel id。 */
-    const val CHANNEL_DUE_LOUD = "due_loud"
+    /**
+     * 响铃+震动。channel 建好后属性不可改，所以响铃方式必须用不同 channel id。
+     *
+     * 后缀 _v2：1.0.4 的 due_loud 带 channel 级 setSound，会与 AlarmService 的
+     * MediaPlayer 各响一次，听感是开头「重音」。修这个问题只能换 id——
+     * 已存在的 channel 改属性是无效的。
+     */
+    const val CHANNEL_DUE_LOUD = "due_loud_v2"
 
     /** 只震动不发声。 */
     const val CHANNEL_DUE_VIBRATE = "due_vibrate"
@@ -58,18 +64,9 @@ object Notifier {
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 500, 300, 500)
                 setShowBadge(true)
-                // 走闹钟音频流：做饭时手机常连着音箱或放得远，
-                // 通知流会被压得很低，闹钟流才是灶台该用的。
-                val uri = alarmSoundUri()
-                if (uri != null) {
-                    setSound(
-                        uri,
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build(),
-                    )
-                }
+                // channel 自身静音：声音由 AlarmService 的 MediaPlayer 循环播放。
+                // 两边都出声会在开头叠一次「重音」，而且 channel 的提示音不循环。
+                setSound(null, null)
             }
         )
         manager.createNotificationChannel(
@@ -149,6 +146,10 @@ object Notifier {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .addAction(0, I18n.t("知道了", "Got it"), dismissIntent(ctx))
+            // Android 13 起前台服务通知可被划走，14 起 setOngoing 也不再阻止。
+            // 划走后「知道了」按钮跟着消失，若不停铃用户就再也没有入口，
+            // 所以把「划走」等同于「知道了」。
+            .setDeleteIntent(dismissIntent(ctx))
         if (!isLoudChannel(channel)) {
             builder.setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
         }

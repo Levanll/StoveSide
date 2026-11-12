@@ -89,7 +89,7 @@ Go to **Cooking** and tap a recipe pill at the top (or ▶ on a card). Every tap
 |---|---|
 | Parallel flows | 5+ concurrent flows, one scheduler loop, never blocking |
 | Wall-clock timing | Due times persist in the database, so process death, reboot and screen-off never skew them |
-| Due alerts | Foreground service + notification channel, sound and vibration |
+| Due alerts | Rings and vibrates until dismissed; can be set to vibrate-only or notification-only |
 | Two-level notes | Template default plus session override; session edits never write back |
 | Text parsing | Chinese numerals, `1.5 hours`, `一个半小时`, `90 seconds`, `1h` all recognized |
 | Bilingual switch | Takes effect immediately, persists to disk, restored on cold start |
@@ -144,7 +144,7 @@ cooking-timer/
 | Serialization | Gson (backup format) |
 | Package | `cn.levanll.stoveside` |
 | minSdk / targetSdk | 24 / 34 |
-| Version | 1.0.4 (versionCode 5) |
+| Version | 1.0.5 (versionCode 6) |
 
 ## Build from source
 
@@ -175,7 +175,7 @@ Without a `keystore/` directory the build produces `app-release-unsigned.apk` in
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md). Current version 1.0.4.
+See [CHANGELOG.md](CHANGELOG.md). Current version 1.0.5.
 
 ## Docs
 

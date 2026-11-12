@@ -5,6 +5,16 @@
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-11-13
+
+### Fixed · 修复
+
+- **暂停 / 完成 / 删除不停止响铃**：1.0.4 只有「知道了」与「+1 分钟」两个停机点，用户把步骤勾完成后铃声仍在响。现在三个业务收尾路径都会调用 `AlarmService.stop`。
+  Pausing, completing or deleting a cook now stops the alarm; previously only "Got it" and "+1 min" did.
+- **通知被划走后铃声无法停止**：Android 13+ 前台服务通知可被划走，`addAction` 随之消失。补 `setDeleteIntent`，划走等同「知道了」。
+  Swiping the notification away now dismisses the alarm, via `setDeleteIntent`.
+- **响铃开头重音**：channel 级 `setSound` 与 `MediaPlayer` 各响一次。channel 换为静音的 `due_loud_v2`（旧 id 属性不可改）。
+  Removed the doubled sound at alarm start by silencing the channel (`due_loud_v2`; channel properties are immutable once created).
 ## [1.0.4] - 2026-11-12
 
 ### Added · 新增
@@ -89,8 +99,10 @@ README / About / Release 排版对齐 `Levanll/InventoryLedger` 的既有约定�
 - 应用内更新依赖 GitHub Releases 的发布产物。
   In-app updates rely on the assets published in GitHub Releases.
 
-[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.5
 [1.0.4]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.4
 [1.0.3]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.3
+[1.0.1]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.1
 [1.0.2]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.2
 [1.0.0]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.0

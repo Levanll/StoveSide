@@ -158,7 +158,11 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startCook(recipe: Recipe) = launchAction { repo.startCook(recipe) }
 
-    fun deleteCook(cook: Cook) = launchAction { repo.deleteCook(cook.id) }
+    fun deleteCook(cook: Cook) = launchAction {
+        repo.deleteCook(cook.id)
+        // 删掉实例等于结束这锅，铃声不该继续响
+        AlarmService.stop(getApplication())
+    }
 
     /** 勾选完成：当前步 done，并自动点亮下一步 */
     fun completeStep(cookId: Long, step: CookStep) = launchAction {
@@ -176,6 +180,9 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
         if (allDone) {
             repo.cook(cookId)?.let { repo.updateCook(it.copy(status = "done", finishedAt = now)) }
         }
+        // 用户已经把这步处理完了，铃声没有继续响的理由。
+        // 不在这里停的话，只能靠点「+1 分钟」或点通知才停得掉。
+        AlarmService.stop(getApplication())
     }
 
     fun startStep(step: CookStep) = launchAction {
@@ -194,6 +201,8 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
                 durationSec = if (step.durationSec > 0) maxOf(sec, 1) else 0,
             )
         )
+        // 暂停也是「我已经知道了」，同样要停铃
+        AlarmService.stop(getApplication())
     }
 
     /**

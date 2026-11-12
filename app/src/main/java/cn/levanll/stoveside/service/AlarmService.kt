@@ -13,7 +13,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationManagerCompat
-import cn.levanll.stoveside.R
 import cn.levanll.stoveside.i18n.I18n
 
 /**
@@ -34,11 +33,6 @@ class AlarmService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == Notifier.ACTION_DISMISS_ALARM) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
         val title = intent?.getStringExtra(EXTRA_TITLE) ?: I18n.t("到点了", "Timer done")
         val text = intent?.getStringExtra(EXTRA_TEXT) ?: ""
 

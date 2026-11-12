@@ -17,7 +17,6 @@ object TimeText {
     fun extendDue(dueAt: Long, now: Long, addMs: Long = 60_000L): Long =
         maxOf(now, dueAt) + addMs
 
-
     /** 剩余毫秒 → 「12:05」或「1:02:03」，负数按 0 处理 */
     fun clock(remainingMs: Long): String {
         val total = (remainingMs / 1000).coerceAtLeast(0)
