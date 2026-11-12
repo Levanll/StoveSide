@@ -178,10 +178,10 @@ D:/python/python.exe scripts/publish.py --public --yes
 
 1. 检查仓库是否存在
 2. 不存在则创建（`/user/repos` 或 `/orgs/{owner}/repos`）
-3. `git add/commit/push`
-4. 打 tag 并推送
-5. 建 Release，正文优先读 `notes/<tag>.md`，上传 `StoveSide-<版本>.apk` + `SHA256SUMS`
-6. **同步版本号到站点与文档**（`sync_version.py`）
+3. **同步版本号到站点与文档**（`sync_version.py`，先改盘，再与源码一起提交）
+4. `git add/commit/push`
+5. 打 tag 并推送
+6. 建 Release，正文优先读 `notes/<tag>.md`，上传 `StoveSide-<版本>.apk` + `SHA256SUMS`
 7. **更新仓库 About**（读 `notes/about.txt`）
 8. 部署 `docs/` 到 `gh-pages`
 
@@ -196,11 +196,11 @@ D:/python/python.exe scripts/publish.py --public --yes
 - README / README_EN 的版本表述
 
 **这个脚本是补上一个真实事故的**：1.0.1、1.0.2 两版发出去后，站点首页还写着「版本 1.0.0」，
-因为那句是手写死在 HTML 里的。现在发布流程第 6 步强制同步。
+因为那句是手写死在 HTML 里的。现在发布流程第 3 步强制同步，同步结果随源码一起提交。
 
 ### Release 附件的命名（有坑）
 
-要求是 `StoveSide <版本>.apk`，但 **GitHub 上传附件时会把文件名里的空格替换成点**：
+要求是 `StoveSide-<版本>.apk`（连字符），因为 **GitHub 上传附件时会把文件名里的空格替换成点**：
 
 | 尝试 | 结果 |
 |---|---|
@@ -336,7 +336,7 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 | `git add -A` 报 `unable to stat CON` | git 的凭据提示把 "Username for..." 写进了名为 `CON` 的文件（Windows 保留名） | 该文件已加入 `.gitignore`，**不要删这行** |
 | `git push` 卡在 `read Username` | token 未注入 | `publish.py` 用 `GIT_CONFIG` 凭据 helper 注入，token 不进 URL、不进进程参数、不落盘 |
 | Release 附件名带点 `StoveSide.1.0.2.apk` | 上传时 GitHub 把空格替换成点 | 统一用连字符 |
-| 站点首页版本号不跟着变 | 手写在 HTML 里 | `sync_version.py`，已进发布流程第 6 步 |
+| 站点首页版本号不跟着变 | 手写在 HTML 里 | `sync_version.py`，已进发布流程第 3 步（提交前） |
 | 英文长菜名把胶囊挤成竖条 | `Row` 放不下 | 已改 `horizontalScroll` |
 | 英文步骤标题和时间贴在一起 | 缺间距 | 时间加了 8dp 左间距，标题/备注限 2 行 + 省略号 |
 | 工作流写成 `${ ... }}` | 缺一个 `$`，GitHub 只认 `${{ }}` | 已修 13 处；改完用 `python -c "import yaml;yaml.safe_load(open(...))"` 验一遍 |

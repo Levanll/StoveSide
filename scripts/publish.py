@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """StoveSide 一键发布脚本（仅依赖 Python 标准库，不引第三方包）。
 
-流程：检查仓库 -> 必要时创建仓库 -> git add/commit/push -> 打 tag
-      -> 建 Release 并上传 APK + SHA256SUMS -> 把 docs/ 部署到 gh-pages
+流程：检查仓库 -> 必要时创建仓库 -> 同步版本号到站点与 README -> git add/commit/push
+      -> 打 tag -> 建 Release 并上传 APK + SHA256SUMS -> 更新 About
+      -> 把 docs/ 部署到 gh-pages
 
 每一步执行前都会先运行 scripts/scan_secrets.py；命中敏感信息立即中止。
 --dry-run 只打印将要执行的动作：不发起网络请求、不写入本地状态、不跑 git 变更命令。
@@ -216,7 +217,7 @@ def sha256_of(path: Path) -> str:
 
 
 def asset_name(version_name: str) -> str:
-    """Release 附件的正式名称：StoveSide <版本号>.apk。
+    """Release 附件的正式名称：StoveSide-<版本号>.apk（连字符；空格会被 GitHub 换成点）。
 
     用 gradle 产出的 app-release.apk 原名会让人看不出下的是哪个版本，
     所以统一改名成带版本号的形式；SHA256SUMS 里记录的也是这个名字。
@@ -397,6 +398,9 @@ def sync_site_version(reporter: Reporter) -> None:
     """
     script = PROJECT_ROOT / "scripts" / "sync_version.py"
     if not script.is_file():
+        return
+    if reporter.dry_run:
+        reporter.action("运行 " + str(script) + "（同步站点与 README 版本号）")
         return
     proc = subprocess.run(
         [sys.executable, str(script)],
@@ -609,6 +613,10 @@ def main(argv=None) -> int:
                 homepage=homepage,
             )
 
+        reporter.step("同步版本号到站点与文档")
+        gate(reporter, "同步版本号")
+        sync_site_version(reporter)
+
         reporter.step("提交并推送源码")
         gate(reporter, "提交推送")
         step_git_commit_push(reporter, branch, message, args.repo)
@@ -634,8 +642,6 @@ def main(argv=None) -> int:
             workdir,
         )
 
-        reporter.step("同步版本号到站点与文档")
-        sync_site_version(reporter)
         reporter.step("更新仓库 About")
         gate(reporter, "更新 About")
         step_about(gh, args.repo, PROJECT_ROOT / "notes" / "about.txt")

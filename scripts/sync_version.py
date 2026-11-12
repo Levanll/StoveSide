@@ -22,7 +22,7 @@ GRADLE = ROOT / "app" / "build.gradle.kts"
 TARGETS = [
     ("docs/index.html", r"版本 \d+\.\d+\.\d+ ·", "版本 {name} ·"),
     ("docs/en/index.html", r"Version \d+\.\d+\.\d+ ·", "Version {name} ·"),
-    ("README.md", r"当前版本 \d+\.\d+\.\d+（versionCode \d+）", "当前版本 {name}（versionCode {code}）"),
+    ("README.md", r"\| 当前版本 \| \d+\.\d+\.\d+（versionCode \d+） \|", "| 当前版本 | {name}（versionCode {code}） |"),
     ("README.md", r"当前版本 \d+\.\d+\.\d+。", "当前版本 {name}。"),
     ("README_EN.md", r"Current version \d+\.\d+\.\d+", "Current version {name}"),
     ("README_EN.md", r"\| Version \| \d+\.\d+\.\d+ \(versionCode \d+\) \|", "| Version | {name} (versionCode {code}) |"),
@@ -41,6 +41,7 @@ def read_version():
 def sync(check_only: bool) -> int:
     name, code = read_version()
     changed = []
+    missed = []
     for rel, pattern, template in TARGETS:
         path = ROOT / rel
         if not path.is_file():
@@ -49,11 +50,16 @@ def sync(check_only: bool) -> int:
         text = io.open(path, encoding="utf-8").read()
         repl = template.format(name=name, code=code)
         new, n = re.subn(pattern, repl, text)
+        if n == 0:
+            missed.append(rel + " -> " + pattern)
         if n and new != text:
             changed.append(rel)
             if not check_only:
                 io.open(path, "w", encoding="utf-8", newline="\n").write(new)
     print("版本真相来源: " + name + " (versionCode " + code + ")")
+    if missed:
+        print("以下目标未匹配到版本号，请检查正则或文档格式: " + ", ".join(missed))
+        return 1
     if check_only:
         if changed:
             print("以下文件版本号不一致，需要同步: " + ", ".join(changed))

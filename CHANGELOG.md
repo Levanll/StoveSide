@@ -1,4 +1,6 @@
-## [1.0.2] 文档改版 - 2026-11-12
+## [1.0.2] - 2026-11-12
+
+### 文档改版
 
 README / About / Release 排版对齐 `Levanll/InventoryLedger` 的既有约定：
 
@@ -6,8 +8,6 @@ README / About / Release 排版对齐 `Levanll/InventoryLedger` 的既有约定�
 - README 结构改为：10 秒看懂 / 核心卖点 / 快速开始 / 界面预览 / 能力一览 / 为什么是模板+实例 / 项目结构 / 技术栈 / 从源码构建 / 隐私速览 / 版本记录 / 文档 / 贡献 / 许可证
 - About 改为中英双语、中文在前（`notes/about.txt`，由发布脚本同步到仓库描述）
 - Release 改为中英双语、中文在前，格式参考 `notes/v1.3.1.md`：本次更新 / 修复 / 下载表 → 分隔线 → What's new / Fixes / Downloads
-
-## [1.0.2] - 2026-11-12
 
 ### Fixed / 修复
 

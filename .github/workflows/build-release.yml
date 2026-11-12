@@ -120,11 +120,11 @@ jobs:
             exit 1
           fi
           mkdir -p dist
-          # 与发布脚本保持一致：StoveSide <版本号>.apk（未签名时加 -unsigned 后缀）
+          # 与发布脚本保持一致：StoveSide-<版本号>.apk（连字符；空格会被 GitHub 换成点）
           if [ "$SIGNED" = "true" ]; then
-            name="StoveSide ${VERSION_NAME}.apk"
+            name="StoveSide-${VERSION_NAME}.apk"
           else
-            name="StoveSide ${VERSION_NAME}-unsigned.apk"
+            name="StoveSide-${VERSION_NAME}-unsigned.apk"
             zip -q -d "$apk" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/*.EC' || true
             echo "::warning title=未签名包::仓库缺少签名 secrets，产物为未签名 APK（已移除 META-INF 内签名文件），仅供构建验证，不能直接安装发布。"
           fi
