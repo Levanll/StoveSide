@@ -36,3 +36,7 @@ docs/_pv-*.html
 # Python 缓存
 __pycache__/
 *.pyc
+
+# 一次性本地脚本（不进仓库）
+_*.sh
+_tmp*
