@@ -1,7 +1,7 @@
 # HANDOFF — 项目交接
 
 > 给接手这个项目的下一个 AI 会话 / 开发者。读完这一份就能继续干活，不必翻历史对话。
-> 最后更新：2026-11-22，对应 v1.0.6（versionCode 7）。
+> 最后更新：2026-11-22，对应 v1.0.7（versionCode 8）。
 
 ---
 
@@ -25,11 +25,11 @@
 
 | 项 | 状态 |
 |---|---|
-| 版本 | 1.0.5（versionCode 6） |
+| 版本 | 1.0.7（versionCode 8） |
 | main 分支 | 干净，与 origin 同步 |
-| Releases | v1.0.0 / v1.0.1 / v1.0.2 / v1.0.3 / v1.0.4 / v1.0.5，各含 `StoveSide-<版本>.apk` + `SHA256SUMS` |
+| Releases | v1.0.0 – v1.0.7 七个版本，各含 `StoveSide-<版本>.apk` + `SHA256SUMS` |
 | Pages | 已部署（gh-pages 分支），中英双页 |
-| About | 中英双语，中文在前，208 字符 |
+| About | 中英双语，中文在前，185 字符（源文件 `notes/about.txt`） |
 | Topics | android / kotlin / jetpack-compose / cooking / timer / room / bilingual |
 | 单测 | 14 个用例，全过 |
 
@@ -42,6 +42,7 @@
 - 前台服务：冷启动 0 个 ServiceRecord；点开始 = 1；全部暂停 7 秒后归 0
 - 到期通知：响铃档走 `due_loud_v2`，仅通知档走 `due`
 - **持续响铃（1.0.4 起）**：`AlarmService` 前台服务 + `MediaPlayer` 循环 + `Vibrator` 波形循环 + `PARTIAL_WAKE_LOCK`；实测 STREAM_ALARM 正在播放
+- **两条确认通道共用记账（1.0.7 起）**：App 内弹窗与通知栏「知道了」/划走通知都写 `AlarmAck`，从通知栏确认过的到点回到 App 不再重复弹。模拟器实测：4 步同时过期 → 下拉通知确认 → 回 App 时该条消失、弹窗直接接到下一条
 - **响铃停止路径（1.0.5 起）**：点「知道了」、划掉通知（`setDeleteIntent`）、点「+1 分钟」、暂停、完成、删除实例，六个入口实测都能让 `AlarmService` 计数归 0
 - **到点 App 内弹窗（1.0.6 起）**：前台不再只能从通知栏停铃。任意 tab 到点都会弹 `AlertDialog`，带「+1 分钟」与「知道了」；「知道了」只停铃 + 记下这轮 `(stepId, dueAt)`，步骤仍保持 `running`（红色 00:00 已到点原样保留）。模拟器实测：连环到点会依次接续、点「+1 分钟」后 `due_at` 推进且弹窗清空、杀进程重开过期步骤会重新弹
 - 粘贴区已改为 `ModalBottomSheet`，键盘弹出时最后一行与光标手柄不再越界
@@ -188,7 +189,8 @@ Recipe ──< Cook ──< CookStep   (实例：这次实际怎么走的)
 |---|---|
 | `AlarmPrompt` | `title` / `subtitle` / `overdueMs` / `extraCount` / `step: CookStep?`；`step == null` 表示试听 |
 | `vm.alarmPrompt` | `StateFlow<AlarmPrompt?>`，在**已有的**单一刷新循环里由 `deriveAlarmPrompt` 派生 |
-| `vm.ackAlarm()` | 记下 `(stepId, dueAt)` → 停铃 → 清空 → 触发一次 `refresh()` 接上下一条 |
+| `vm.ackAlarm()` | `AlarmAck.mark(stepId, dueAt)` → 停铃 → 清空 → 触发一次 `refresh()` 接上下一条 |
+| `AlarmAck` | 进程内共享的确认记录（`service/AlarmAck.kt`）；`mark` / `isAcked` / `forget`。通知栏确认经 `AlarmDismissReceiver` 写入同一份 |
 | `vm.tryAlarm()` | 试听走同一条链路，`previewing = true` 让 step 为 null，不写库 |
 | `AlarmDialog` | 挂在 `AppRoot` 的 `Scaffold` **外层**，因此任意 tab 都会弹 |
 
@@ -197,7 +199,7 @@ Recipe ──< Cook ──< CookStep   (实例：这次实际怎么走的)
 1. **不新增 tick、不新增数据库字段**。判据是已有的 `StepView.isOverdue`（`overdueMs > 0`），此前定义了却没人消费。
 2. **确认键不改步骤状态**。到点只提醒是 1.0.4 定下的规则，弹窗同样遵守；改状态会让「+1 分钟」无处可点。
 3. **去重键必须带 `dueAt`**。只记 `stepId` 的话，点过「+1 分钟」后再归零就不会弹了。记录只在内存（`AlarmAck`），杀进程重开会重新提醒——那个步骤客观上还没处理完。
-4. **两条确认通道必须共用同一份记录**。App 内弹窗写 `AlarmAck.mark`，通知栏的「知道了」/划走通知经 `AlarmDismissReceiver` 也写它；步骤身份靠 `AlarmService.EXTRA_STEP_ID` / `EXTRA_DUE_AT` 一路带进 `PendingIntent`。**只停铃不记账的话，用户下拉通知确认完，回到 App 还会被同一个到点再问一次**——这是 1.0.6 发布后审查发现的 P2 缺陷，已修在 main 上（未发版）。
+4. **两条确认通道必须共用同一份记录**。App 内弹窗写 `AlarmAck.mark`，通知栏的「知道了」/划走通知经 `AlarmDismissReceiver` 也写它；步骤身份靠 `AlarmService.EXTRA_STEP_ID` / `EXTRA_DUE_AT` 一路带进 `PendingIntent`。**只停铃不记账的话，用户下拉通知确认完，回到 App 还会被同一个到点再问一次**——这是 1.0.6 发布后审查发现的 P2 缺陷，已在 1.0.7 修复并发布。
 
 超过 1 小时不再显示「已过 236 小时」，改为「早就到点了」；1 小时内仍给精确时长。
 
@@ -424,7 +426,7 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 
 ## 十、下一步可以做什么
 
-已完成（不用再做）：CHANGELOG 修复（`88da59e`）、CI 首次真实跑通（run 43226009748）、编辑器 IME 遮挡与选区手柄（`2b7fafd`）、持续响铃与 +1 分钟修复（1.0.4 / 1.0.5）、**真机验证持续响铃与「+1 分钟」**（2026-11-22，用户实测响铃与震动正常、+1 分钟点击生效）、**到点 App 内弹窗 + 设置选中态重做**（`fe9f35c` / `1ccb033`）、**发布 1.0.6**（`0745958`，tag `v1.0.6`，Release 与 gh-pages 均已上线）。
+已完成（不用再做）：CHANGELOG 修复（`88da59e`）、CI 首次真实跑通（run 43226009748）、编辑器 IME 遮挡与选区手柄（`2b7fafd`）、持续响铃与 +1 分钟修复（1.0.4 / 1.0.5）、**真机验证持续响铃与「+1 分钟」**（2026-11-22，用户实测响铃与震动正常、+1 分钟点击生效）、**到点 App 内弹窗 + 设置选中态重做**（`fe9f35c` / `1ccb033`）、**发布 1.0.6**（`0745958`）与 **1.0.7**（`eb350dc`，修复通知栏确认后重复弹窗）。
 
 按优先级：
 
