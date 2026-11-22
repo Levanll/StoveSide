@@ -1,7 +1,7 @@
 # HANDOFF — 项目交接
 
 > 给接手这个项目的下一个 AI 会话 / 开发者。读完这一份就能继续干活，不必翻历史对话。
-> 最后更新：2026-11-22。发布版仍是 v1.0.5（versionCode 6），main 上已多出两个未发版提交。
+> 最后更新：2026-11-22，对应 v1.0.6（versionCode 7）。
 
 ---
 
@@ -43,7 +43,7 @@
 - 到期通知：响铃档走 `due_loud_v2`，仅通知档走 `due`
 - **持续响铃（1.0.4 起）**：`AlarmService` 前台服务 + `MediaPlayer` 循环 + `Vibrator` 波形循环 + `PARTIAL_WAKE_LOCK`；实测 STREAM_ALARM 正在播放
 - **响铃停止路径（1.0.5 起）**：点「知道了」、划掉通知（`setDeleteIntent`）、点「+1 分钟」、暂停、完成、删除实例，六个入口实测都能让 `AlarmService` 计数归 0
-- **到点 App 内弹窗（未发版）**：前台不再只能从通知栏停铃。任意 tab 到点都会弹 `AlertDialog`，带「+1 分钟」与「知道了」；「知道了」只停铃 + 记下这轮 `(stepId, dueAt)`，步骤仍保持 `running`（红色 00:00 已到点原样保留）。模拟器实测：连环到点会依次接续、点「+1 分钟」后 `due_at` 推进且弹窗清空、杀进程重开过期步骤会重新弹
+- **到点 App 内弹窗（1.0.6 起）**：前台不再只能从通知栏停铃。任意 tab 到点都会弹 `AlertDialog`，带「+1 分钟」与「知道了」；「知道了」只停铃 + 记下这轮 `(stepId, dueAt)`，步骤仍保持 `running`（红色 00:00 已到点原样保留）。模拟器实测：连环到点会依次接续、点「+1 分钟」后 `due_at` 推进且弹窗清空、杀进程重开过期步骤会重新弹
 - 粘贴区已改为 `ModalBottomSheet`，键盘弹出时最后一行与光标手柄不再越界
 - 签名：`CN=StoveSide, O=Levanll`，全版本一致，可覆盖安装
 
@@ -196,7 +196,8 @@ Recipe ──< Cook ──< CookStep   (实例：这次实际怎么走的)
 
 1. **不新增 tick、不新增数据库字段**。判据是已有的 `StepView.isOverdue`（`overdueMs > 0`），此前定义了却没人消费。
 2. **确认键不改步骤状态**。到点只提醒是 1.0.4 定下的规则，弹窗同样遵守；改状态会让「+1 分钟」无处可点。
-3. **去重键必须带 `dueAt`**。只记 `stepId` 的话，点过「+1 分钟」后再归零就不会弹了。`ackedOverdue` 只在内存，杀进程重开会重新提醒——那个步骤客观上还没处理完。
+3. **去重键必须带 `dueAt`**。只记 `stepId` 的话，点过「+1 分钟」后再归零就不会弹了。记录只在内存（`AlarmAck`），杀进程重开会重新提醒——那个步骤客观上还没处理完。
+4. **两条确认通道必须共用同一份记录**。App 内弹窗写 `AlarmAck.mark`，通知栏的「知道了」/划走通知经 `AlarmDismissReceiver` 也写它；步骤身份靠 `AlarmService.EXTRA_STEP_ID` / `EXTRA_DUE_AT` 一路带进 `PendingIntent`。**只停铃不记账的话，用户下拉通知确认完，回到 App 还会被同一个到点再问一次**——这是 1.0.6 发布后审查发现的 P2 缺陷，已修在 main 上（未发版）。
 
 超过 1 小时不再显示「已过 236 小时」，改为「早就到点了」；1 小时内仍给精确时长。
 
@@ -413,6 +414,8 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 | 铃声停不掉，只能强杀 App | 响铃与计时状态脱钩，或通知被划走导致「知道了」消失 | 每个改状态的入口补 `AlarmService.stop`；通知补 `setDeleteIntent` |
 | 设置页「选中的反而是灰的」 | 用 `OutlinedButton(enabled = 未选中)` 表示单选：选中项被画成灰色禁用态，未选中项才是亮边框，语义也读成「不可用」 | 用 `FilterChip(selected = ...)` + 前置勾选；选中填充、未选中描边，绝不用 `enabled=false` 表达「已选中」 |
 | 到点弹窗只弹一次就再也不弹 | 去重键只用了 `stepId` | 键必须是 `(stepId, dueAt)`；延期后 `dueAt` 变化才会重新弹 |
+| 通知栏点过「知道了」，回到 App 又弹一次同一个到点 | 两条确认通道各记各的：receiver 只停铃、不记账 | 确认记录统一放 `AlarmAck`，步骤身份经 `EXTRA_STEP_ID` / `EXTRA_DUE_AT` 带进 `PendingIntent` |
+| 发版后 CHANGELOG 的版本仍被算进 Unreleased | 只加了 `## [x.y.z]` 标题，忘了改底部 `[Unreleased]` compare 基线并补链接定义 | 发版时同步改底部链接；`sync_version.py` 只管 docs/README，不碰 CHANGELOG |
 | 隔夜回 App 弹窗写「已过 236 小时」 | 直接回显 `overdueMs` | 超过 1 小时降级为「早就到点了」 |
 | 真机 `adb exec-out screencap` 从某刻起一律失败（`Failed to take screenshot`，`/sdcard` 也写不进） | 未定位，疑似系统侧截图服务被占用/降级 | 换模拟器取证；真机行为靠人工点击确认 |
 | bash 里跑 `bin/gradle` 报 `agent library failed to init: instrument` | winuxcmd 的 `cygpath` 把 `F:` 转成 `F;`，写坏 `-javaagent` 路径 | 用 `cmd /c gradle.bat` 走原生入口，别走 sh 脚本 |
@@ -421,15 +424,14 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 
 ## 十、下一步可以做什么
 
-已完成（不用再做）：CHANGELOG 修复（`88da59e`）、CI 首次真实跑通（run 43226009748）、编辑器 IME 遮挡与选区手柄（`2b7fafd`）、持续响铃与 +1 分钟修复（1.0.4 / 1.0.5）、**真机验证持续响铃与「+1 分钟」**（2026-11-22，用户实测响铃与震动正常、+1 分钟点击生效）、**到点 App 内弹窗 + 设置选中态重做**（`d7cb60c` / `3567dcd`，已推 main，未发版）。
+已完成（不用再做）：CHANGELOG 修复（`88da59e`）、CI 首次真实跑通（run 43226009748）、编辑器 IME 遮挡与选区手柄（`2b7fafd`）、持续响铃与 +1 分钟修复（1.0.4 / 1.0.5）、**真机验证持续响铃与「+1 分钟」**（2026-11-22，用户实测响铃与震动正常、+1 分钟点击生效）、**到点 App 内弹窗 + 设置选中态重做**（`fe9f35c` / `1ccb033`）、**发布 1.0.6**（`0745958`，tag `v1.0.6`，Release 与 gh-pages 均已上线）。
 
 按优先级：
 
-1. **发 1.0.6** — main 上已有两个未发版提交（到点弹窗 + 设置选中态）。发版前要补 `notes/v1.0.6.md`（中英对称、各带下载表）、跑 `sync_version.py`（它会同步 docs 与 README 的版本表述）、再走 `publish.py --public --yes` 的 8 步
-2. **长时后台验证** — 只在真机连续观察了约 5 分钟。荣耀/小米这类激进省电是否会在 30 分钟以上掐掉 `AlarmService`，仍是未知
-3. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
-4. **全屏闹钟界面（可选）** — 现在有了 App 内弹窗，全屏闹钟的边际收益下降了；且 Android 14+ 对 `USE_FULL_SCREEN_INTENT` 默认拒绝，要处理系统设置跳转。做之前先和用户确认
-5. **A5 内置示例食谱 / A6 桌面小组件** — 用户当时没勾选，要做先确认
+1. **长时后台验证** — 只在真机连续观察了约 5 分钟。荣耀/小米这类激进省电是否会在 30 分钟以上掐掉 `AlarmService`，仍是未知
+2. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
+3. **全屏闹钟界面（可选）** — 现在有了 App 内弹窗，全屏闹钟的边际收益下降了；且 Android 14+ 对 `USE_FULL_SCREEN_INTENT` 默认拒绝，要处理系统设置跳转。做之前先和用户确认
+4. **A5 内置示例食谱 / A6 桌面小组件** — 用户当时没勾选，要做先确认
 
 ---
 

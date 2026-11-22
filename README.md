@@ -144,7 +144,7 @@ cooking-timer/
 | 序列化 | Gson（导出格式） |
 | 包名 | `cn.levanll.stoveside` |
 | minSdk / targetSdk | 24 / 34 |
-| 当前版本 | 1.0.6（versionCode 7） |
+| 当前版本 | 1.0.7（versionCode 8） |
 
 ## 从源码构建
 
@@ -175,7 +175,7 @@ gradle assembleRelease
 
 ## 版本记录
 
-见 [CHANGELOG.md](CHANGELOG.md)。当前版本 1.0.6。
+见 [CHANGELOG.md](CHANGELOG.md)。当前版本 1.0.7。
 
 ## 文档
 

@@ -5,6 +5,18 @@
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-11-22
+
+### Fixed · 修复
+
+- **通知栏确认后，App 内还会再弹一次同一个到点**：1.0.6 的确认记录只存在弹窗那条路径上，下拉通知点「知道了」或划走通知都不记账，回到 App 就把同一个到点再问一遍。现在两条通道共用同一份记录，确认一次就够。
+  Dismissing from the notification shade no longer causes the same expiry to pop up again inside the app: both paths now share one record of what has been acknowledged.
+
+### Changed · 变更
+
+- CHANGELOG 底部的版本链接补齐（1.0.6 曾被算进 Unreleased），HANDOFF 的发布状态与提交哈希对齐到当前 HEAD。
+  Changelog link definitions are up to date again, and the handoff document now matches the current HEAD.
+
 ## [1.0.6] - 2026-11-22
 
 ### Added · 新增
@@ -115,7 +127,9 @@ README / About / Release 排版对齐 `Levanll/InventoryLedger` 的既有约定�
 - 应用内更新依赖 GitHub Releases 的发布产物。
   In-app updates rely on the assets published in GitHub Releases.
 
-[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/Levanll/StoveSide/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.7
+[1.0.6]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.6
 [1.0.5]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.5
 [1.0.4]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.4
 [1.0.3]: https://github.com/Levanll/StoveSide/releases/tag/v1.0.3
