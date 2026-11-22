@@ -5,6 +5,22 @@
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-11-22
+
+### Added · 新增
+
+- **到点后在 App 内弹窗**：此前只有通知栏能停铃，人在前台看着屏幕也得下拉通知。现在任意页面到点都会弹出对话框，带「+1 分钟」与「知道了」；「知道了」只停铃、不改步骤状态，这一锅仍显示为「00:00 已到点」，可以接着续时或勾完成。
+  A timer that runs out now raises an in-app dialog on any screen, with "+1 min" and "Got it". Dismissing only stops the alarm; the step stays marked as overdue and can still be extended or completed.
+- **试听也走同一个弹窗**：设置页的试听不再只出现在通知栏，和真实到点是同一条链路。
+  The test alarm in Settings uses the same dialog instead of a notification only.
+
+### Changed · 变更
+
+- **设置页选中项改为填充高亮**：原先用「禁用态」表示已选中，导致选中项是灰的、未选中项反倒是亮的，和「亮 = 已选」的常识相反；无障碍朗读也会把它读成「不可用」。现在选中项填充主色并带勾选图标，未选中项只描边。
+  Selected options in Settings are now filled and ticked; previously the selected one was drawn greyed-out and the unselected ones bright, the opposite of what most people expect, and screen readers announced the choice as "unavailable".
+- **超时提示不再显示夸张的时长**：隔夜才回到 App 时，弹窗显示「早就到点了」而不是「已过 236 小时」；1 小时内仍给精确时长。
+  When you come back to the app much later, the dialog says "Due a while ago" instead of an absurd number of hours; exact durations are still shown within the first hour.
+
 ## [1.0.5] - 2026-11-13
 
 ### Fixed · 修复
