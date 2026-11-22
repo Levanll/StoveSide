@@ -17,9 +17,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,21 +105,24 @@ fun SettingsScreen(vm: StoveViewModel, modifier: Modifier = Modifier) {
         item {
             SectionCard(I18n.t("到点提醒", "Timer alarm")) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
+                    OptionChip(
+                        label = I18n.t("响铃 + 震动", "Sound + vibrate"),
+                        selected = alarmMode == AlarmPrefs.Mode.SOUND_AND_VIBRATE,
                         onClick = { AlarmPrefs.set(AlarmPrefs.Mode.SOUND_AND_VIBRATE); alarmMode = AlarmPrefs.mode },
-                        enabled = alarmMode != AlarmPrefs.Mode.SOUND_AND_VIBRATE,
-                    ) { Text(I18n.t("响铃 + 震动", "Sound + vibrate")) }
-                    OutlinedButton(
+                    )
+                    OptionChip(
+                        label = I18n.t("仅震动", "Vibrate only"),
+                        selected = alarmMode == AlarmPrefs.Mode.VIBRATE_ONLY,
                         onClick = { AlarmPrefs.set(AlarmPrefs.Mode.VIBRATE_ONLY); alarmMode = AlarmPrefs.mode },
-                        enabled = alarmMode != AlarmPrefs.Mode.VIBRATE_ONLY,
-                    ) { Text(I18n.t("仅震动", "Vibrate only")) }
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
+                    OptionChip(
+                        label = I18n.t("仅通知", "Notification only"),
+                        selected = alarmMode == AlarmPrefs.Mode.NOTIFICATION_ONLY,
                         onClick = { AlarmPrefs.set(AlarmPrefs.Mode.NOTIFICATION_ONLY); alarmMode = AlarmPrefs.mode },
-                        enabled = alarmMode != AlarmPrefs.Mode.NOTIFICATION_ONLY,
-                    ) { Text(I18n.t("仅通知", "Notification only")) }
+                    )
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
@@ -125,27 +134,26 @@ fun SettingsScreen(vm: StoveViewModel, modifier: Modifier = Modifier) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = {
-                    AlarmService.start(
-                        ctx,
-                        I18n.t("试听：到点了", "Test: timer done"),
-                        I18n.t("这是一次试听，点「知道了」停止", "This is a test alarm; tap \"Got it\" to stop"),
-                    )
-                }) { Text(I18n.t("试听", "Try it")) }
+                // 试听也走弹窗：和真实到点是同一条链路，只是没有步骤可写库
+                OutlinedButton(onClick = { vm.tryAlarm() }) {
+                    Text(I18n.t("试听", "Try it"))
+                }
             }
         }
 
         item {
             SectionCard(I18n.t("语言", "Language")) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
+                    OptionChip(
+                        label = "中文",
+                        selected = lang == I18n.Lang.ZH,
                         onClick = { I18n.set(I18n.Lang.ZH); lang = I18n.lang },
-                        enabled = lang != I18n.Lang.ZH,
-                    ) { Text("中文") }
-                    OutlinedButton(
+                    )
+                    OptionChip(
+                        label = "English",
+                        selected = lang == I18n.Lang.EN,
                         onClick = { I18n.set(I18n.Lang.EN); lang = I18n.lang },
-                        enabled = lang != I18n.Lang.EN,
-                    ) { Text("English") }
+                    )
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
@@ -202,6 +210,44 @@ fun SettingsScreen(vm: StoveViewModel, modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+/**
+ * 单选胶囊。选中态用主色填充 + 勾选图标，未选中态只描边——
+ * 绝不把选中项画成 enabled=false 的灰色禁用态：那既读反了「亮=已选」，
+ * 又会让 TalkBack 把已选项播报成「不可用」。
+ */
+@Composable
+private fun OptionChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = if (selected) {
+            {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        } else {
+            null
+        },
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = selected,
+            borderColor = MaterialTheme.colorScheme.outline,
+            selectedBorderColor = MaterialTheme.colorScheme.primary,
+        ),
+    )
 }
 
 @Composable
