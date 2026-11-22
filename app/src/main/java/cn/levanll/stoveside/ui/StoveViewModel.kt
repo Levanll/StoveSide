@@ -47,6 +47,18 @@ data class CookView(
             .minOfOrNull { it.remainingMs } ?: Long.MAX_VALUE
 }
 
+/**
+ * 到点弹窗的内容。试听时 [step] 为 null：试听不关联任何步骤，也就不该写库。
+ * 一次只弹一条，[extraCount] 是同一轮里还有几个也到点了。
+ */
+data class AlarmPrompt(
+    val title: String,
+    val subtitle: String,
+    val overdueMs: Long,
+    val extraCount: Int,
+    val step: CookStep?,
+)
+
 class StoveViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo: StoveRepository = (app as StoveApp).repository
@@ -79,6 +91,19 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
 
     private var lastSnapshot: List<CookView> = emptyList()
 
+    /** 到点弹窗；null 表示没有待确认的到点 */
+    private val _alarmPrompt = MutableStateFlow<AlarmPrompt?>(null)
+    val alarmPrompt: StateFlow<AlarmPrompt?> = _alarmPrompt.asStateFlow()
+
+    /**
+     * 已确认过的 (stepId, dueAt)，只在内存里。进程重开后过期步骤会再次提醒——
+     * 那个步骤客观上还没处理完。键里带 dueAt，所以「+1 分钟」后重新到点会再弹。
+     */
+    private val ackedOverdue = mutableSetOf<Pair<Long, Long>>()
+
+    /** 试听不关联步骤，用一个独立开关驱动同一个弹窗 */
+    private var previewing = false
+
     private fun hasRunning(): Boolean = lastSnapshot.any { it.runningCount > 0 }
 
     private suspend fun refresh() = withContext(Dispatchers.IO) {
@@ -100,6 +125,61 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
         )
         lastSnapshot = views
         _cooks.value = views
+        deriveAlarmPrompt(views)
+    }
+
+    private fun deriveAlarmPrompt(views: List<CookView>) {
+        if (previewing) {
+            _alarmPrompt.value = AlarmPrompt(
+                title = I18n.t("试听：到点了", "Test: timer done"),
+                subtitle = I18n.t("这是一次试听，点「知道了」停止", "This is a test alarm; tap \"Got it\" to stop"),
+                overdueMs = 0L,
+                extraCount = 0,
+                step = null,
+            )
+            return
+        }
+        val waiting = views.flatMap { cook ->
+            cook.steps.mapNotNull { sv ->
+                val due = sv.step.dueAt ?: return@mapNotNull null
+                if (!sv.isOverdue || (sv.step.id to due) in ackedOverdue) null else sv to cook.recipeName
+            }
+        }
+        val head = waiting.firstOrNull()
+        _alarmPrompt.value = if (head == null) {
+            null
+        } else {
+            AlarmPrompt(
+                title = head.first.step.title,
+                subtitle = head.second,
+                overdueMs = head.first.overdueMs,
+                extraCount = waiting.size - 1,
+                step = head.first.step,
+            )
+        }
+    }
+
+    /** 「知道了」：停铃、记下这一轮到点，步骤状态不动——它客观上还在跑 */
+    fun ackAlarm() {
+        val prompt = _alarmPrompt.value ?: return
+        val step = prompt.step
+        if (step != null) step.dueAt?.let { ackedOverdue += step.id to it }
+        previewing = false
+        AlarmService.stop(getApplication())
+        _alarmPrompt.value = null
+        // 同一轮里若还有别的到点步骤，立刻重算，让下一条接上
+        viewModelScope.launch { refresh() }
+    }
+
+    /** 试听：走和真实到点同一条弹窗链路，只是没有步骤可写 */
+    fun tryAlarm() {
+        AlarmService.start(
+            getApplication(),
+            I18n.t("试听：到点了", "Test: timer done"),
+            I18n.t("这是一次试听，点「知道了」停止", "This is a test alarm; tap \"Got it\" to stop"),
+        )
+        previewing = true
+        viewModelScope.launch { refresh() }
     }
 
     private fun launchAction(block: suspend () -> Unit) {
@@ -226,6 +306,9 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
         )
         // 用户跑到这一步点「+1 分钟」，等于已经知道到点了，铃声不该继续在耳边叫
         AlarmService.stop(getApplication())
+        // 延期后旧的一轮到点作废：放开记忆，下次再归零才会重新弹窗
+        ackedOverdue.removeAll(ackedOverdue.filter { it.first == step.id }.toSet())
+        _alarmPrompt.value = null
     }
 
     fun updateNote(step: CookStep, note: String) = launchAction {
