@@ -1,7 +1,7 @@
 # HANDOFF — 项目交接
 
 > 给接手这个项目的下一个 AI 会话 / 开发者。读完这一份就能继续干活，不必翻历史对话。
-> 最后更新：2026-11-13，对应 v1.0.5（versionCode 6）。
+> 最后更新：2026-11-22。发布版仍是 v1.0.5（versionCode 6），main 上已多出两个未发版提交。
 
 ---
 
@@ -43,6 +43,7 @@
 - 到期通知：响铃档走 `due_loud_v2`，仅通知档走 `due`
 - **持续响铃（1.0.4 起）**：`AlarmService` 前台服务 + `MediaPlayer` 循环 + `Vibrator` 波形循环 + `PARTIAL_WAKE_LOCK`；实测 STREAM_ALARM 正在播放
 - **响铃停止路径（1.0.5 起）**：点「知道了」、划掉通知（`setDeleteIntent`）、点「+1 分钟」、暂停、完成、删除实例，六个入口实测都能让 `AlarmService` 计数归 0
+- **到点 App 内弹窗（未发版）**：前台不再只能从通知栏停铃。任意 tab 到点都会弹 `AlertDialog`，带「+1 分钟」与「知道了」；「知道了」只停铃 + 记下这轮 `(stepId, dueAt)`，步骤仍保持 `running`（红色 00:00 已到点原样保留）。模拟器实测：连环到点会依次接续、点「+1 分钟」后 `due_at` 推进且弹窗清空、杀进程重开过期步骤会重新弹
 - 粘贴区已改为 `ModalBottomSheet`，键盘弹出时最后一行与光标手柄不再越界
 - 签名：`CN=StoveSide, O=Levanll`，全版本一致，可覆盖安装
 
@@ -56,10 +57,10 @@
   **注意**：CI 里没有配置签名 secrets，本次产物走的是降级路径 `StoveSide-1.0.2-unsigned.apk`（未签名，不可直接安装）；
   正式发布仍走本地 `publish.py`。
 - **导入语言恢复** 没有单测覆盖（需要 Android Context），只做了代码路径接入。
-- 未在真机（非模拟器）上跑过，只在 x86_64 API 34 模拟器验证。
-- **持续响铃的真机表现未经证实**：模拟器无振动马达、音频为虚拟输出。厨房场景下闹钟音量流是否够响、息屏后是否持续、厂商省电策略（小米/华为/Oppo 会额外限制后台）都是未知。
+- ~~未在真机（非模拟器）上跑过~~ **已在真机验证（2026-11-22，荣耀 BKQ-AN00 / Android 17）**：响铃、震动用户实测正常；`dumpsys` 侧同时确认 `MediaPlayer` 状态 `state:started`、`usage=USAGE_ALARM`、`StoveSide:Alarm` 的 `PARTIAL_WAKE_LOCK` 连续持有超过 3 分钟、息屏 `Dozing` 期间仍在播。
+- ~~持续响铃的真机表现未经证实~~ **已证实**（同上）。仍未覆盖的是**厂商省电策略下的长时表现**：本次只连续观察了约 5 分钟，荣耀的激进省电是否会在更长时间（如 30 分钟以上）掐掉前台服务，尚未测。
 - **通知渠道不可迁移**：`due_loud_v2` 是新建的 id。如果用户装过 1.0.4 之前的版本，旧 `due_loud` 渠道仍留在系统里，且新渠道会被系统当作全新渠道重置为默认。渠道属性一旦创建即归用户所有，代码无法改回。
-- **「+1 分钟」修复的端到端验证缺失**：正确性由 6 条单测覆盖（`TimeTextTest`），但没能在模拟器上完整点通一次——列表会因运行中计时常重排，固定坐标的 `input tap` 总是打偏。真机第一次验证时建议重点看这条。
+- ~~「+1 分钟」修复的端到端验证缺失~~ **已端到端验证**：真机上归零 399 秒后点一次，`due_at` 从过去跳到 `now+60s`、`durationSec` 从 120 累加到 180、UI 立即显示 00:58。列表重排导致固定坐标打偏的问题仍在，解决办法是先 `screencap` 定位再点，不要沿用上一张截图的坐标。
 - **CHANGELOG 已修复并提交**（`88da59e`）：`9c69615` 曾把文件从 56 行砍到 28 行，现已从 `8458ef0` 取回 `## [Unreleased]`、
   `## [1.0.0]` 整节（8 条双语 Added + Known limitations）、文件头说明段与底部 compare/tag 链接，
   H1 已提到文件最前，版本按倒序排列（Unreleased → 1.0.2 → 1.0.0），共 64 行。
@@ -178,6 +179,27 @@ Recipe ──< Cook ──< CookStep   (实例：这次实际怎么走的)
 4. **每个「结束这锅」的路径都必须停铃**。`AlarmService.stop` 现在挂在 `addOneMinute` / `pauseStep` / `completeStep` / `deleteCook` 四处，外加通知的「知道了」与 `setDeleteIntent`（划掉通知）。**新增任何改变计时状态的入口时，记得补这一行**，否则又会出现「处理完了铃声还在响」。
 
 另外：`ACTION_DISMISS_ALARM` 这个 action 目前没有发送方，是 1.0.5 清掉的死代码；通知用 `PendingIntent.getBroadcast` 而非 `getService`，因为后台点通知时拉前台服务会撞 Android 12+ 的后台启动限制。
+
+### 到点弹窗（`ui/StoveViewModel.kt` + `ui/screen/AppRoot.kt`）
+
+通知栏之外必须有前台入口，否则用户看着屏幕也得下拉通知才能停铃。做法是最小改动：
+
+| 组件 | 作用 |
+|---|---|
+| `AlarmPrompt` | `title` / `subtitle` / `overdueMs` / `extraCount` / `step: CookStep?`；`step == null` 表示试听 |
+| `vm.alarmPrompt` | `StateFlow<AlarmPrompt?>`，在**已有的**单一刷新循环里由 `deriveAlarmPrompt` 派生 |
+| `vm.ackAlarm()` | 记下 `(stepId, dueAt)` → 停铃 → 清空 → 触发一次 `refresh()` 接上下一条 |
+| `vm.tryAlarm()` | 试听走同一条链路，`previewing = true` 让 step 为 null，不写库 |
+| `AlarmDialog` | 挂在 `AppRoot` 的 `Scaffold` **外层**，因此任意 tab 都会弹 |
+
+三条约束：
+
+1. **不新增 tick、不新增数据库字段**。判据是已有的 `StepView.isOverdue`（`overdueMs > 0`），此前定义了却没人消费。
+2. **确认键不改步骤状态**。到点只提醒是 1.0.4 定下的规则，弹窗同样遵守；改状态会让「+1 分钟」无处可点。
+3. **去重键必须带 `dueAt`**。只记 `stepId` 的话，点过「+1 分钟」后再归零就不会弹了。`ackedOverdue` 只在内存，杀进程重开会重新提醒——那个步骤客观上还没处理完。
+
+超过 1 小时不再显示「已过 236 小时」，改为「早就到点了」；1 小时内仍给精确时长。
+
 ### 文本解析（`domain/RecipeParser.kt`）
 
 - 正则顺序：`halfHourPattern`（「一个半小时」）**必须排在** `timePattern` 之前，否则 `个` 会截断数字段，「一个半小时」被算成 30 分钟
@@ -389,20 +411,24 @@ D:/python/python.exe scripts/preview_md.py README.md _pv-zh.html
 | 工作流写成 `${ ... }}` | 缺一个 `$`，GitHub 只认 `${{ }}` | 已修 13 处；改完用 `python -c "import yaml;yaml.safe_load(open(...))"` 验一遍 |
 | 改了通知渠道声音/震动却不生效 | channel 创建后属性归用户所有，代码再改无效 | 换新 channel id（如 `due_loud_v2`），代价是系统把新渠道当全新渠道 |
 | 铃声停不掉，只能强杀 App | 响铃与计时状态脱钩，或通知被划走导致「知道了」消失 | 每个改状态的入口补 `AlarmService.stop`；通知补 `setDeleteIntent` |
+| 设置页「选中的反而是灰的」 | 用 `OutlinedButton(enabled = 未选中)` 表示单选：选中项被画成灰色禁用态，未选中项才是亮边框，语义也读成「不可用」 | 用 `FilterChip(selected = ...)` + 前置勾选；选中填充、未选中描边，绝不用 `enabled=false` 表达「已选中」 |
+| 到点弹窗只弹一次就再也不弹 | 去重键只用了 `stepId` | 键必须是 `(stepId, dueAt)`；延期后 `dueAt` 变化才会重新弹 |
+| 隔夜回 App 弹窗写「已过 236 小时」 | 直接回显 `overdueMs` | 超过 1 小时降级为「早就到点了」 |
+| 真机 `adb exec-out screencap` 从某刻起一律失败（`Failed to take screenshot`，`/sdcard` 也写不进） | 未定位，疑似系统侧截图服务被占用/降级 | 换模拟器取证；真机行为靠人工点击确认 |
 | bash 里跑 `bin/gradle` 报 `agent library failed to init: instrument` | winuxcmd 的 `cygpath` 把 `F:` 转成 `F;`，写坏 `-javaagent` 路径 | 用 `cmd /c gradle.bat` 走原生入口，别走 sh 脚本 |
 
 ---
 
 ## 十、下一步可以做什么
 
-已完成（不用再做）：CHANGELOG 修复（`88da59e`）、CI 首次真实跑通（run 43226009748）、编辑器 IME 遮挡与选区手柄（`2b7fafd`）、持续响铃与 +1 分钟修复（1.0.4 / 1.0.5）。
+已完成（不用再做）：CHANGELOG 修复（`88da59e`）、CI 首次真实跑通（run 43226009748）、编辑器 IME 遮挡与选区手柄（`2b7fafd`）、持续响铃与 +1 分钟修复（1.0.4 / 1.0.5）、**真机验证持续响铃与「+1 分钟」**（2026-11-22，用户实测响铃与震动正常、+1 分钟点击生效）、**到点 App 内弹窗 + 设置选中态重做**（`d7cb60c` / `3567dcd`，已推 main，未发版）。
 
 按优先级：
 
-1. **真机验证持续响铃** — 最该做的一条。模拟器证明不了响度、震感和息屏持续性；厂商省电策略也是未知数。重点看：厨房 3–5 米能否听见、息屏后会不会断、被限制后台时有没有降级
-2. **真机验证「+1 分钟」** — 挑一个 1 分钟的步骤，归零后等半分钟再点，应变成 `01:00`。单测证明了算法，但没在真机上点通过
+1. **发 1.0.6** — main 上已有两个未发版提交（到点弹窗 + 设置选中态）。发版前要补 `notes/v1.0.6.md`（中英对称、各带下载表）、跑 `sync_version.py`（它会同步 docs 与 README 的版本表述）、再走 `publish.py --public --yes` 的 8 步
+2. **长时后台验证** — 只在真机连续观察了约 5 分钟。荣耀/小米这类激进省电是否会在 30 分钟以上掐掉 `AlarmService`，仍是未知
 3. **给导入恢复语言加测试** — 需要 Robolectric 或 instrumented test
-4. **全屏闹钟界面（可选）** — 到点亮屏弹窗。代价是 Android 14+ 对 `USE_FULL_SCREEN_INTENT` 默认拒绝，要处理系统设置跳转；收益是可感知性提升最大。做之前先和用户确认
+4. **全屏闹钟界面（可选）** — 现在有了 App 内弹窗，全屏闹钟的边际收益下降了；且 Android 14+ 对 `USE_FULL_SCREEN_INTENT` 默认拒绝，要处理系统设置跳转。做之前先和用户确认
 5. **A5 内置示例食谱 / A6 桌面小组件** — 用户当时没勾选，要做先确认
 
 ---
