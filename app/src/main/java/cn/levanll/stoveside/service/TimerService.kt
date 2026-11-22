@@ -57,10 +57,13 @@ class TimerService : Service() {
                 val title = I18n.t("到点了", "Timer done")
                 val text = step.title
                 if (AlarmPrefs.mode == AlarmPrefs.Mode.NOTIFICATION_ONLY) {
-                    Notifier.due(this, (Notifier.ID_DUE_BASE + step.id).toInt(), title, text)
+                    Notifier.due(
+                        this, (Notifier.ID_DUE_BASE + step.id).toInt(), title, text,
+                        stepId = step.id, dueAt = step.dueAt ?: 0L,
+                    )
                 } else {
                     // 响铃档交给 AlarmService 持有前台通知并持续发声/震动
-                    AlarmService.start(this, title, text)
+                    AlarmService.start(this, title, text, stepId = step.id, dueAt = step.dueAt ?: 0L)
                 }
             }
             // 没有进行中的计时就自行退出：冷启动不该常驻一个空转的前台服务。

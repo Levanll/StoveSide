@@ -98,8 +98,11 @@ object Notifier {
     }
 
     /** 「知道了」：唯一能真正停止响铃的入口，因此必须始终可见。 */
-    private fun dismissIntent(ctx: Context): PendingIntent {
-        val intent = Intent(ctx, AlarmDismissReceiver::class.java).setAction(ACTION_DISMISS_ALARM)
+    private fun dismissIntent(ctx: Context, stepId: Long, dueAt: Long): PendingIntent {
+        val intent = Intent(ctx, AlarmDismissReceiver::class.java)
+            .setAction(ACTION_DISMISS_ALARM)
+            .putExtra(AlarmService.EXTRA_STEP_ID, stepId)
+            .putExtra(AlarmService.EXTRA_DUE_AT, dueAt)
         return PendingIntent.getBroadcast(
             ctx, 100, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
@@ -124,9 +127,10 @@ object Notifier {
      * 到点通知。「仅通知」档直接发；响铃/震动档由 AlarmService 以前台通知发出，
      * 两者共用 [buildDue] 保证文案与按钮一致。
      */
-    fun due(ctx: Context, id: Int, title: String, text: String) {
+    fun due(ctx: Context, id: Int, title: String, text: String, stepId: Long, dueAt: Long) {
         if (!hasPermission(ctx)) return
-        NotificationManagerCompat.from(ctx).notify(id, buildDue(ctx, title, text, CHANNEL_DUE))
+        NotificationManagerCompat.from(ctx)
+            .notify(id, buildDue(ctx, title, text, CHANNEL_DUE, stepId = stepId, dueAt = dueAt))
     }
 
     fun buildDue(
@@ -135,6 +139,8 @@ object Notifier {
         text: String,
         channel: String,
         dismissible: Boolean = true,
+        stepId: Long = -1L,
+        dueAt: Long = 0L,
     ): android.app.Notification {
         val builder = NotificationCompat.Builder(ctx, channel)
             .setSmallIcon(R.drawable.ic_stat_timer)
@@ -145,11 +151,11 @@ object Notifier {
             .setContentIntent(contentIntent(ctx))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .addAction(0, I18n.t("知道了", "Got it"), dismissIntent(ctx))
+            .addAction(0, I18n.t("知道了", "Got it"), dismissIntent(ctx, stepId, dueAt))
             // Android 13 起前台服务通知可被划走，14 起 setOngoing 也不再阻止。
             // 划走后「知道了」按钮跟着消失，若不停铃用户就再也没有入口，
             // 所以把「划走」等同于「知道了」。
-            .setDeleteIntent(dismissIntent(ctx))
+            .setDeleteIntent(dismissIntent(ctx, stepId, dueAt))
         if (!isLoudChannel(channel)) {
             builder.setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
         }

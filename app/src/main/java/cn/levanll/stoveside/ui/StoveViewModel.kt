@@ -12,6 +12,7 @@ import cn.levanll.stoveside.data.entity.Step
 import cn.levanll.stoveside.domain.RecipeParser
 import cn.levanll.stoveside.domain.TimeText
 import cn.levanll.stoveside.i18n.I18n
+import cn.levanll.stoveside.service.AlarmAck
 import cn.levanll.stoveside.service.AlarmService
 import cn.levanll.stoveside.service.TimerService
 import kotlinx.coroutines.Dispatchers
@@ -95,11 +96,8 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
     private val _alarmPrompt = MutableStateFlow<AlarmPrompt?>(null)
     val alarmPrompt: StateFlow<AlarmPrompt?> = _alarmPrompt.asStateFlow()
 
-    /**
-     * 已确认过的 (stepId, dueAt)，只在内存里。进程重开后过期步骤会再次提醒——
-     * 那个步骤客观上还没处理完。键里带 dueAt，所以「+1 分钟」后重新到点会再弹。
-     */
-    private val ackedOverdue = mutableSetOf<Pair<Long, Long>>()
+    // 已确认记录放在 AlarmAck 里，与通知栏「知道了」共用——否则两条确认通道各记各的，
+    // 用户下拉通知确认完回到 App 还会被同一个到点再问一次。
 
     /** 试听不关联步骤，用一个独立开关驱动同一个弹窗 */
     private var previewing = false
@@ -142,7 +140,7 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
         val waiting = views.flatMap { cook ->
             cook.steps.mapNotNull { sv ->
                 val due = sv.step.dueAt ?: return@mapNotNull null
-                if (!sv.isOverdue || (sv.step.id to due) in ackedOverdue) null else sv to cook.recipeName
+                if (!sv.isOverdue || AlarmAck.isAcked(sv.step.id, due)) null else sv to cook.recipeName
             }
         }
         val head = waiting.firstOrNull()
@@ -163,7 +161,7 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
     fun ackAlarm() {
         val prompt = _alarmPrompt.value ?: return
         val step = prompt.step
-        if (step != null) step.dueAt?.let { ackedOverdue += step.id to it }
+        if (step != null) step.dueAt?.let { AlarmAck.mark(step.id, it) }
         previewing = false
         AlarmService.stop(getApplication())
         _alarmPrompt.value = null
@@ -307,7 +305,7 @@ class StoveViewModel(app: Application) : AndroidViewModel(app) {
         // 用户跑到这一步点「+1 分钟」，等于已经知道到点了，铃声不该继续在耳边叫
         AlarmService.stop(getApplication())
         // 延期后旧的一轮到点作废：放开记忆，下次再归零才会重新弹窗
-        ackedOverdue.removeAll(ackedOverdue.filter { it.first == step.id }.toSet())
+        AlarmAck.forget(step.id)
         _alarmPrompt.value = null
     }
 

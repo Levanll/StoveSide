@@ -30,11 +30,20 @@ class AlarmService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var ringing = false
 
+    /** 当前通知代表哪一步到点；-1 表示没有步骤（试听） */
+    private var currentStepId = -1L
+    private var currentDueAt = 0L
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val title = intent?.getStringExtra(EXTRA_TITLE) ?: I18n.t("到点了", "Timer done")
         val text = intent?.getStringExtra(EXTRA_TEXT) ?: ""
+        // 把步骤身份带进通知，通知栏的「知道了」才能把确认写回 App
+        intent?.let {
+            currentStepId = it.getLongExtra(EXTRA_STEP_ID, -1L)
+            currentDueAt = it.getLongExtra(EXTRA_DUE_AT, 0L)
+        }
 
         // 多个步骤同时到点时只保留一个响铃实例：重复 start 会让
         // MediaPlayer 层层叠加，用户点一次「知道了」只停掉最上面一层。
@@ -59,7 +68,12 @@ class AlarmService : Service() {
             AlarmPrefs.Mode.VIBRATE_ONLY -> Notifier.CHANNEL_DUE_VIBRATE
             AlarmPrefs.Mode.NOTIFICATION_ONLY -> Notifier.CHANNEL_DUE
         }
-        return Notifier.buildDue(this, title, text, channel, dismissible = false)
+        return Notifier.buildDue(
+            this, title, text, channel,
+            dismissible = false,
+            stepId = currentStepId,
+            dueAt = currentDueAt,
+        )
     }
 
     private fun startRinging() {
@@ -131,11 +145,21 @@ class AlarmService : Service() {
     companion object {
         const val EXTRA_TITLE = "title"
         const val EXTRA_TEXT = "text"
+        const val EXTRA_STEP_ID = "step_id"
+        const val EXTRA_DUE_AT = "due_at"
 
-        fun start(ctx: Context, title: String, text: String) {
+        fun start(
+            ctx: Context,
+            title: String,
+            text: String,
+            stepId: Long = -1L,
+            dueAt: Long = 0L,
+        ) {
             val i = Intent(ctx, AlarmService::class.java)
                 .putExtra(EXTRA_TITLE, title)
                 .putExtra(EXTRA_TEXT, text)
+                .putExtra(EXTRA_STEP_ID, stepId)
+                .putExtra(EXTRA_DUE_AT, dueAt)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ctx.startForegroundService(i)
             } else {
